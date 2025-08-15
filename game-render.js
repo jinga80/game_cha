@@ -4,25 +4,34 @@
 
 // 게임 렌더링 함수
 function renderGame() {
+    // 전역 변수 확인 및 재정의
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    
+    if (!canvas || !ctx) {
+        console.error('게임 렌더링 실패: 캔버스 또는 컨텍스트를 찾을 수 없습니다!');
+        return;
+    }
+    
     // 캔버스 클리어
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // 렌더링 순서
-    renderBackground();
-    renderPlatforms();
-    renderCoins();
-    renderEnemies();
-    renderProjectiles();
-    renderExplosions();
-    renderParticles();
-    renderPlayer();
-    renderStageProgress();
-    renderStageCompleteMessage();
-    renderPauseScreen();
+    renderBackground(ctx, canvas);
+    renderPlatforms(ctx, canvas);
+    renderCoins(ctx, canvas);
+    renderEnemies(ctx, canvas);
+    renderProjectiles(ctx, canvas);
+    renderExplosions(ctx, canvas);
+    renderParticles(ctx, canvas);
+    renderPlayer(ctx, canvas);
+    renderStageProgress(ctx, canvas);
+    renderStageCompleteMessage(ctx, canvas);
+    renderPauseScreen(ctx, canvas);
 }
 
 // 배경 렌더링 (행성 테마별 HD2D 스타일)
-function renderBackground() {
+function renderBackground(ctx, canvas) {
     const planetTheme = PLANET_THEMES[currentPlanet];
     
     // 하늘 그라데이션 (행성 테마별 색상)
@@ -132,7 +141,7 @@ function renderBackground() {
 }
 
 // 플랫폼 렌더링 (행성 테마별 HD2D 스타일)
-function renderPlatforms() {
+function renderPlatforms(ctx, canvas) {
     const planetTheme = PLANET_THEMES[currentPlanet];
     
     platforms.forEach(platform => {
