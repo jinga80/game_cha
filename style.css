@@ -35,6 +35,8 @@ body {
     max-width: 95vw;
     max-height: 95vh;
     background: #000;
+    z-index: 100; /* 게임 UI보다 낮은 z-index */
+    position: relative;
 }
 
 /* 버전 정보 */

@@ -507,6 +507,35 @@ function startGame() {
     if (gameOverScreen) gameOverScreen.style.display = 'none';
     if (characterSelectScreen) characterSelectScreen.style.display = 'none';
     
+    // 게임 UI 표시
+    const gameUI = document.getElementById('gameUI');
+    if (gameUI) gameUI.style.display = 'block';
+    
+    // 게임 캔버스 표시
+    const gameCanvas = document.getElementById('gameCanvas');
+    if (gameCanvas) {
+        console.log('게임 캔버스 찾음:', gameCanvas);
+        gameCanvas.style.display = 'block';
+        gameCanvas.style.background = '#000'; // 검정 배경으로 초기화
+        gameCanvas.style.width = '100%';
+        gameCanvas.style.height = '100%';
+        gameCanvas.style.maxWidth = '95vw';
+        gameCanvas.style.maxHeight = '95vh';
+        
+        // 캔버스 컨텍스트 확인
+        const ctx = gameCanvas.getContext('2d');
+        if (ctx) {
+            console.log('캔버스 컨텍스트 성공:', ctx);
+            // 캔버스 초기화
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+        } else {
+            console.error('캔버스 컨텍스트 실패!');
+        }
+    } else {
+        console.error('게임 캔버스를 찾을 수 없습니다!');
+    }
+    
     // 게임 상태 초기화
     gameRunning = true;
     gamePaused = false;
@@ -532,8 +561,16 @@ function startGame() {
     // UI 업데이트
     updateUI();
     
+    // 캔버스 크기 조정
+    resizeCanvas();
+    
+    // 첫 번째 프레임 즉시 렌더링
+    renderGame();
+    
     // 게임 루프 시작
     gameLoop();
+    
+    console.log('게임 시작 완료! 캔버스:', gameCanvas);
 }
 
 // 게임 재시작
