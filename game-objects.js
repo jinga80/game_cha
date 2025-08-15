@@ -331,6 +331,11 @@ function updateProjectiles() {
                         
                         createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, particleColor);
                         
+                        // 적 처치 효과음 재생
+                        if (audioSystem && audioSystem.playEnemyHitSound) {
+                            audioSystem.playEnemyHitSound();
+                        }
+                        
                         console.log(`${player.character}가 ${enemy.type}를 처치! 데미지: ${damage}`);
                     }
                 } else {
@@ -526,6 +531,12 @@ function updateCoins() {
                 coin.collected = true;
                 score += 100;
                 createParticle(coin.x + coin.width/2, coin.y + coin.height/2, '#FFD700');
+                
+                // 코인 획득 효과음 재생
+                if (audioSystem && audioSystem.playCoinSound) {
+                    audioSystem.playCoinSound();
+                }
+                
                 console.log('코인 획득!');
                 
                 // 스테이지 진행도 증가
@@ -583,6 +594,11 @@ function completeStage() {
             player.y + player.height/2 + (Math.random() - 0.5) * 100,
             '#00FF00'
         );
+    }
+    
+    // 스테이지 완료 효과음 재생
+    if (audioSystem && audioSystem.playStageClearSound) {
+        audioSystem.playStageClearSound();
     }
     
     // 스테이지 완료 메시지 표시

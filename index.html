@@ -26,6 +26,7 @@
             
             <div class="menu-buttons">
                 <button id="startButton" class="menu-button primary">게임 시작</button>
+                <button id="storyModeButton" class="menu-button secondary">📖 스토리 모드</button>
                 <button id="controlGuideButton" class="menu-button secondary">조작법 보기</button>
             </div>
             
@@ -276,6 +277,9 @@
     </div>
 
     <!-- 게임 스크립트 -->
+    <script src="story-data.js"></script>
+    <script src="story-system.js"></script>
+    <script src="audio-system.js"></script>
     <script src="game-core.js"></script>
     <script src="game-objects.js"></script>
     <script src="game-render.js"></script>
@@ -285,6 +289,7 @@
         // 캐릭터 선택 시스템
         document.addEventListener('DOMContentLoaded', function() {
             const startButton = document.getElementById('startButton');
+            const storyModeButton = document.getElementById('storyModeButton');
             const characterSelectScreen = document.getElementById('characterSelectScreen');
             const startScreen = document.getElementById('startScreen');
             const characterCards = document.querySelectorAll('.character-card');
@@ -295,12 +300,36 @@
             
             // 게임 시작 버튼 클릭
             startButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (audioSystem && audioSystem.playMenuConfirmSound) {
+                    audioSystem.playMenuConfirmSound();
+                }
+                
                 startScreen.style.display = 'none';
                 characterSelectScreen.style.display = 'block';
             });
             
+            // 스토리 모드 버튼 클릭
+            storyModeButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (audioSystem && audioSystem.playMenuConfirmSound) {
+                    audioSystem.playMenuConfirmSound();
+                }
+                
+                if (typeof startStoryMode === 'function') {
+                    startStoryMode();
+                } else {
+                    alert('스토리 모드가 준비 중입니다.');
+                }
+            });
+            
             // 뒤로 가기 버튼 클릭
             backToStartButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (audioSystem && audioSystem.playMenuSelectSound) {
+                    audioSystem.playMenuSelectSound();
+                }
+                
                 characterSelectScreen.style.display = 'none';
                 startScreen.style.display = 'block';
             });
@@ -345,18 +374,31 @@
                     return;
                 }
                 
+                // 메뉴 선택 효과음 재생
+                if (audioSystem && audioSystem.playMenuConfirmSound) {
+                    audioSystem.playMenuConfirmSound();
+                }
+                
                 // 게임 시작
                 startGame();
             });
             
-            // 일시정지 버튼
-            const pauseButton = document.getElementById('pauseButton');
-            if (pauseButton) {
-                pauseButton.addEventListener('click', function() {
-                    togglePause();
-                });
-            }
-        });
+                    // 일시정지 버튼
+        const pauseButton = document.getElementById('pauseButton');
+        if (pauseButton) {
+            pauseButton.addEventListener('click', function() {
+                togglePause();
+            });
+        }
+        
+        // 스토리 시스템과 오디오 시스템 초기화
+        if (typeof initStorySystem === 'function') {
+            initStorySystem();
+        }
+        if (typeof initAudioSystem === 'function') {
+            initAudioSystem();
+        }
+    });
     </script>
 </body>
 </html> 

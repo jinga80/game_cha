@@ -570,6 +570,11 @@ function startGame() {
     // 게임 루프 시작
     gameLoop();
     
+    // 게임 배경음악 재생
+    if (audioSystem && audioSystem.playGameBGM) {
+        audioSystem.playGameBGM();
+    }
+    
     console.log('게임 시작 완료! 캔버스:', gameCanvas);
 }
 
@@ -599,6 +604,11 @@ function jump() {
         
         // 점프 파티클 생성
         createParticle(player.x + player.width/2, player.y + player.height, '#87CEEB');
+        
+        // 점프 효과음 재생
+        if (audioSystem && audioSystem.playJumpSound) {
+            audioSystem.playJumpSound();
+        }
         
         console.log(`${player.character} 첫 번째 점프! (점프력: ${jumpPower})`);
     } else if (player.jumping && player.jumpCount < 3) {
@@ -719,6 +729,26 @@ function attack() {
     createParticle(projectileX, projectileY, particleColor);
     
     console.log(`${player.character} 공격! 데미지: ${projectileDamage}, 타입: ${projectileType}`);
+    
+    // 캐릭터별 공격 효과음 재생
+    if (audioSystem) {
+        switch (projectileType) {
+            case 'sword':
+                audioSystem.playSwordSound();
+                break;
+            case 'arrow':
+                audioSystem.playArrowSound();
+                break;
+            case 'hammer':
+                audioSystem.playHammerSound();
+                break;
+            case 'bomb':
+                audioSystem.playBombSound();
+                break;
+            default:
+                audioSystem.playSwordSound(); // 기본 검 효과음
+        }
+    }
     
     // 공격 애니메이션 효과
     createAttackEffect(projectileX, projectileY);
@@ -864,6 +894,16 @@ function loseLife() {
 function gameOver() {
     console.log('게임 오버!');
     gameRunning = false;
+    
+    // 게임 오버 효과음 재생
+    if (audioSystem && audioSystem.playGameOverSound) {
+        audioSystem.playGameOverSound();
+    }
+    
+    // 게임 배경음악 중지
+    if (audioSystem && audioSystem.stopBGM) {
+        audioSystem.stopBGM();
+    }
     
     // 최종 점수 설정
     const finalScore = document.getElementById('finalScore');
