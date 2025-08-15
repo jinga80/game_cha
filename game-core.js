@@ -941,8 +941,10 @@ function gameLoop() {
         updatePlayer();
         updateEnemies();
         updateCoins();
-        updateHealthItems();
+        updateProjectiles();
+        updateExplosions();
         updateParticles();
+        updateStageProgress();
         
         // 렌더링
         renderGame();
