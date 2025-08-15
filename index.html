@@ -21,88 +21,95 @@
             margin: 0 auto;
             border: 3px solid #333;
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            max-width: 95vw;
-            max-height: 95vh;
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
         }
 
         .game-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            width: 100vw;
+            height: 100vh;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 20px;
+            padding: 0;
+            position: relative;
         }
 
         .game-ui {
             position: absolute;
-            top: 30px;
-            left: 30px;
+            top: 20px;
+            left: 20px;
             color: white;
-            font-size: 20px;
+            font-size: 16px;
             z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
-            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
             border: 2px solid #FFD700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            min-width: 200px;
         }
 
         .game-ui h2 {
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
             color: #FFD700;
-            font-size: 24px;
+            font-size: 18px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .ui-row {
             display: flex;
             align-items: center;
-            margin: 10px 0;
-            gap: 10px;
+            margin: 6px 0;
+            gap: 8px;
         }
 
         .ui-label {
             font-weight: bold;
             color: #87CEEB;
-            min-width: 80px;
+            min-width: 60px;
+            font-size: 14px;
         }
 
         .ui-value {
             color: #FFF;
             font-weight: bold;
+            font-size: 14px;
         }
 
         .health-bar {
-            width: 350px;
-            height: 30px;
+            width: 200px;
+            height: 20px;
             background: #333;
-            border: 3px solid #FFF;
-            border-radius: 8px;
+            border: 2px solid #FFF;
+            border-radius: 6px;
             overflow: hidden;
-            margin: 15px 0;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            margin: 10px 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         .health-fill {
             height: 100%;
             background: linear-gradient(90deg, #00FF00, #FFFF00, #FF0000);
             transition: width 0.3s ease;
-            border-radius: 5px;
+            border-radius: 4px;
         }
 
         .lives {
             display: flex;
-            gap: 8px;
-            margin: 15px 0;
+            gap: 5px;
+            margin: 8px 0;
         }
 
         .heart {
-            width: 30px;
-            height: 30px;
+            width: 20px;
+            height: 20px;
             background: #FF69B4;
             clip-path: path('M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z');
-            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
         }
 
         .start-screen {
@@ -200,22 +207,99 @@
             top: 20px;
             right: 20px;
             color: #FFD700;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             z-index: 1000;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-radius: 8px;
             border: 1px solid #FFD700;
+        }
+
+        .fullscreen-toggle {
+            position: absolute;
+            top: 20px;
+            right: 120px;
+            color: #FFD700;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #FFD700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-toggle:hover {
+            background: rgba(255, 215, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* 전체화면 모드 스타일 */
+        .fullscreen .game-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .fullscreen #gameCanvas {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+
+        .fullscreen .game-ui {
+            top: 15px;
+            left: 15px;
+            font-size: 14px;
+            padding: 12px;
+        }
+
+        .fullscreen .game-ui h2 {
+            font-size: 16px;
+        }
+
+        .fullscreen .ui-label {
+            min-width: 50px;
+            font-size: 12px;
+        }
+
+        .fullscreen .ui-value {
+            font-size: 12px;
+        }
+
+        .fullscreen .health-bar {
+            width: 150px;
+            height: 16px;
+        }
+
+        .fullscreen .heart {
+            width: 16px;
+            height: 16px;
+        }
+
+        .fullscreen .version-info,
+        .fullscreen .fullscreen-toggle {
+            top: 15px;
+            font-size: 14px;
+            padding: 6px 10px;
+        }
+
+        .fullscreen .fullscreen-toggle {
+            right: 100px;
         }
     </style>
 </head>
 <body>
-    <div class="game-container">
+    <div class="game-container" id="gameContainer">
         <canvas id="gameCanvas" width="1920" height="1080"></canvas>
         
         <!-- 버전 정보 -->
         <div class="version-info">v1.05</div>
+        
+        <!-- 전체화면 토글 버튼 -->
+        <div class="fullscreen-toggle" id="fullscreenToggle">⛶ 전체화면</div>
         
         <!-- 게임 UI -->
         <div class="game-ui">

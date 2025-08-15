@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js)
+// 게임 핵심 로직 (game-core.js) - 전체화면 기능 추가
 // ========================================
 
 // 게임 상태 관리
@@ -8,6 +8,7 @@ let gamePaused = false;
 let score = 0;
 let lives = 5;
 let currentStage = 1;
+let isFullscreen = false;
 
 // 게임 설정
 const GRAVITY = 0.8;
@@ -25,8 +26,124 @@ function initGame() {
     // 이벤트 리스너 설정
     setupEventListeners();
     
+    // 전체화면 기능 초기화
+    initFullscreen();
+    
     // 게임 시작
     console.log('게임 초기화 완료!');
+}
+
+// 전체화면 기능 초기화
+function initFullscreen() {
+    const fullscreenToggle = document.getElementById('fullscreenToggle');
+    if (fullscreenToggle) {
+        fullscreenToggle.addEventListener('click', toggleFullscreen);
+    }
+    
+    // ESC 키로 전체화면 해제
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+}
+
+// 전체화면 토글
+function toggleFullscreen() {
+    if (!isFullscreen) {
+        enterFullscreen();
+    } else {
+        exitFullscreen();
+    }
+}
+
+// 전체화면 진입
+function enterFullscreen() {
+    const gameContainer = document.getElementById('gameContainer');
+    const canvas = document.getElementById('gameCanvas');
+    
+    if (gameContainer.requestFullscreen) {
+        gameContainer.requestFullscreen();
+    } else if (gameContainer.webkitRequestFullscreen) {
+        gameContainer.webkitRequestFullscreen();
+    } else if (gameContainer.mozRequestFullScreen) {
+        gameContainer.mozRequestFullScreen();
+    } else if (gameContainer.msRequestFullscreen) {
+        gameContainer.msRequestFullscreen();
+    }
+    
+    // 전체화면 모드 CSS 클래스 추가
+    document.body.classList.add('fullscreen');
+    isFullscreen = true;
+    
+    // 캔버스 크기 조정
+    resizeCanvas();
+    
+    console.log('전체화면 모드 진입');
+}
+
+// 전체화면 해제
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
+    
+    // 전체화면 모드 CSS 클래스 제거
+    document.body.classList.remove('fullscreen');
+    isFullscreen = false;
+    
+    // 캔버스 크기 조정
+    resizeCanvas();
+    
+    console.log('전체화면 모드 해제');
+}
+
+// 전체화면 상태 변경 처리
+function handleFullscreenChange() {
+    if (!document.fullscreenElement && 
+        !document.webkitFullscreenElement && 
+        !document.mozFullScreenElement && 
+        !document.msFullscreenElement) {
+        
+        // 전체화면이 해제된 경우
+        document.body.classList.remove('fullscreen');
+        isFullscreen = false;
+        resizeCanvas();
+        console.log('전체화면 모드 해제됨');
+    }
+}
+
+// 캔버스 크기 조정
+function resizeCanvas() {
+    const canvas = document.getElementById('gameCanvas');
+    const gameContainer = document.getElementById('gameContainer');
+    
+    if (isFullscreen) {
+        // 전체화면 모드: 화면 전체 크기
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+    } else {
+        // 일반 모드: 1080p 비율 유지하면서 화면에 맞춤
+        const maxWidth = window.innerWidth * 0.95;
+        const maxHeight = window.innerHeight * 0.95;
+        const aspectRatio = 1920 / 1080;
+        
+        let width = maxWidth;
+        let height = width / aspectRatio;
+        
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * aspectRatio;
+        }
+        
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+    }
 }
 
 // 이벤트 리스너 설정
@@ -55,12 +172,19 @@ function setupEventListeners() {
                 e.preventDefault();
                 togglePause();
                 break;
+            case 'F11':
+                e.preventDefault();
+                toggleFullscreen();
+                break;
         }
     });
     
     document.addEventListener('keyup', (e) => {
         keys[e.code] = false;
     });
+    
+    // 윈도우 리사이즈 이벤트
+    window.addEventListener('resize', resizeCanvas);
     
     // 버튼 이벤트
     const startButton = document.getElementById('startButton');
@@ -250,6 +374,11 @@ function showControlGuide() {
 **액션:**
 - F: 공격
 - P: 일시정지
+- F11: 전체화면 토글
+
+**전체화면:**
+- 우측 상단 ⛶ 버튼 클릭
+- 또는 F11 키 사용
 
 **게임 목표:**
 - 적을 물리치고 코인을 모으세요!
@@ -280,4 +409,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 로드 완료!'); 
+console.log('게임 핵심 로직 (전체화면 기능 포함) 로드 완료!'); 
