@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 연속 공격 및 2단 점프 구현 버전
+// 게임 핵심 로직 (game-core.js) - 연속 공격 버그 수정 및 HD2D 스타일 버전
 // ========================================
 
 // 게임 상태 관리
@@ -282,12 +282,13 @@ function resetPlayer() {
     player.jumpCount = 0; // 점프 횟수 초기화
 }
 
-// 공격 함수 (연속 공격 시스템)
+// 공격 함수 (연속 공격 시스템 - 버그 수정)
 function attack() {
-    if (player.attackCooldown > 0) return; // 공격 쿨다운 체크
+    // 공격 쿨다운 체크 (버그 수정: attacking 상태 체크 제거)
+    if (player.attackCooldown > 0) return;
     
     player.attacking = true;
-    player.attackCooldown = 8; // 공격 쿨다운 대폭 감소 (0.13초)
+    player.attackCooldown = 8; // 공격 쿨다운 (0.13초)
     
     // 발사체 생성 위치 계산
     let projectileX, projectileY;
@@ -313,6 +314,11 @@ function attack() {
     
     // 공격 애니메이션 효과
     createAttackEffect(projectileX, projectileY);
+    
+    // 공격 상태를 즉시 해제하여 연속 공격 가능하게 함
+    setTimeout(() => {
+        player.attacking = false;
+    }, 100); // 0.1초 후 공격 상태 해제
 }
 
 // 공격 이펙트 생성
@@ -483,4 +489,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (연속 공격 및 2단 점프 구현 버전) 로드 완료!'); 
+console.log('게임 핵심 로직 (연속 공격 버그 수정 및 HD2D 스타일 버전) 로드 완료!'); 

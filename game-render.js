@@ -1,5 +1,5 @@
 // ========================================
-// 게임 렌더링 시스템 (game-render.js) - 발사체 및 폭발 효과 추가 버전
+// 게임 렌더링 시스템 (game-render.js) - HD2D 스타일 적용 버전
 // ========================================
 
 // 게임 렌더링 함수
@@ -21,47 +21,35 @@ function renderGame() {
     renderPauseScreen();
 }
 
-// 배경 렌더링
+// 배경 렌더링 (HD2D 스타일)
 function renderBackground() {
-    // 하늘 그라데이션
+    // 하늘 그라데이션 (HD2D 스타일)
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#87CEEB');
-    gradient.addColorStop(0.5, '#B0E0E6');
-    gradient.addColorStop(1, '#E0F6FF');
+    gradient.addColorStop(0, '#4A90E2'); // 더 진한 파란색
+    gradient.addColorStop(0.3, '#7FB3D3'); // 중간 톤
+    gradient.addColorStop(0.7, '#B8D4E3'); // 연한 톤
+    gradient.addColorStop(1, '#E8F4F8'); // 매우 연한 톤
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 구름들 (더 크고 아름답게)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    for (let i = 0; i < 8; i++) {
-        const x = (i * 300 + Date.now() * 0.005) % (canvas.width + 300) - 150;
-        const y = 80 + Math.sin(i * 0.5) * 60;
-        const size = 50 + Math.sin(i * 0.3) * 20;
-        
-        // 구름 그림자
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    // 원거리 산들 (HD2D 스타일)
+    ctx.fillStyle = 'rgba(74, 144, 226, 0.4)'; // 파란색 계열
+    for (let i = 0; i < 6; i++) {
+        const x = (i * 350) % (canvas.width + 400);
+        const height = 150 + Math.sin(i * 0.8) * 40;
         ctx.beginPath();
-        ctx.arc(x + 5, y + 5, size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 구름 몸체
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 구름 하이라이트
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.beginPath();
-        ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.4, 0, Math.PI * 2);
+        ctx.moveTo(x, canvas.height);
+        ctx.lineTo(x + 150, canvas.height - height);
+        ctx.lineTo(x + 300, canvas.height);
+        ctx.closePath();
         ctx.fill();
     }
     
-    // 원거리 산들
-    ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
-    for (let i = 0; i < 5; i++) {
-        const x = (i * 400) % (canvas.width + 400);
-        const height = 200 + Math.sin(i) * 50;
+    // 중간 거리 산들
+    ctx.fillStyle = 'rgba(74, 144, 226, 0.6)';
+    for (let i = 0; i < 4; i++) {
+        const x = (i * 500) % (canvas.width + 600);
+        const height = 100 + Math.sin(i * 1.2) * 30;
         ctx.beginPath();
         ctx.moveTo(x, canvas.height);
         ctx.lineTo(x + 200, canvas.height - height);
@@ -69,34 +57,79 @@ function renderBackground() {
         ctx.closePath();
         ctx.fill();
     }
+    
+    // 구름들 (HD2D 스타일)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    for (let i = 0; i < 5; i++) {
+        const x = (i * 400 + Date.now() * 0.003) % (canvas.width + 400) - 200;
+        const y = 60 + Math.sin(i * 0.7) * 40;
+        const size = 40 + Math.sin(i * 0.4) * 15;
+        
+        // 구름 그림자
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(x + 3, y + 3, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 구름 몸체
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 구름 하이라이트
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }
 
-// 플랫폼 렌더링
+// 플랫폼 렌더링 (HD2D 스타일)
 function renderPlatforms() {
     platforms.forEach(platform => {
         const x = platform.x - cameraX;
         if (x + platform.width > 0 && x < canvas.width) {
-            // 플랫폼 그림자
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.fillRect(x + 8, platform.y + 8, platform.width, platform.height);
+            // 플랫폼 그림자 (HD2D 스타일)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillRect(x + 6, platform.y + 6, platform.width, platform.height);
             
-            // 플랫폼 몸체
-            ctx.fillStyle = '#8B4513';
+            // 플랫폼 몸체 (HD2D 스타일)
+            if (platform.type === 'ground') {
+                // 지면은 더 진한 색상
+                ctx.fillStyle = '#8B4513';
+            } else {
+                // 중간 플랫폼은 HD2D 스타일
+                const gradient = ctx.createLinearGradient(x, platform.y, x, platform.y + platform.height);
+                gradient.addColorStop(0, '#A0522D');
+                gradient.addColorStop(0.5, '#8B4513');
+                gradient.addColorStop(1, '#654321');
+                ctx.fillStyle = gradient;
+            }
             ctx.fillRect(x, platform.y, platform.width, platform.height);
             
-            // 플랫폼 테두리
+            // 플랫폼 테두리 (HD2D 스타일)
             ctx.strokeStyle = '#654321';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.strokeRect(x, platform.y, platform.width, platform.height);
             
-            // 플랫폼 하이라이트
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.fillRect(x, platform.y, platform.width, 8);
+            // 플랫폼 하이라이트 (HD2D 스타일)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.fillRect(x, platform.y, platform.width, 6);
             
-            // 플랫폼 텍스처
-            ctx.fillStyle = 'rgba(139, 69, 19, 0.5)';
-            for (let i = 0; i < platform.width; i += 20) {
-                ctx.fillRect(x + i, platform.y + 10, 15, 2);
+            // 플랫폼 텍스처 (HD2D 스타일)
+            if (platform.type === 'ground') {
+                // 지면 텍스처
+                ctx.fillStyle = 'rgba(139, 69, 19, 0.6)';
+                for (let i = 0; i < platform.width; i += 25) {
+                    ctx.fillRect(x + i, platform.y + 15, 20, 3);
+                }
+            } else {
+                // 중간 플랫폼 텍스처
+                ctx.fillStyle = 'rgba(160, 82, 45, 0.5)';
+                for (let i = 0; i < platform.width; i += 30) {
+                    ctx.fillRect(x + i, platform.y + 10, 25, 2);
+                }
             }
         }
     });
@@ -107,9 +140,9 @@ function renderEnemies() {
     enemies.forEach(enemy => {
         const x = enemy.x - cameraX;
         if (x + enemy.width > 0 && x < canvas.width) {
-            // 적 그림자
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-            ctx.fillRect(x + 8, enemy.y + enemy.height + 8, enemy.width - 16, 15);
+            // 적 그림자 (HD2D 스타일)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(x + 6, enemy.y + enemy.height + 6, enemy.width - 12, 12);
             
             // 적 몸체 (AI 상태에 따른 색상 변화)
             let bodyColor;
@@ -123,29 +156,34 @@ function renderEnemies() {
                 bodyColor = enemy.state === 'chase' ? '#FF0000' : '#8B0000';
             }
             
-            ctx.fillStyle = bodyColor;
+            // 적 몸체 그라데이션 (HD2D 스타일)
+            const enemyGradient = ctx.createLinearGradient(x, enemy.y, x, enemy.y + enemy.height);
+            enemyGradient.addColorStop(0, bodyColor);
+            enemyGradient.addColorStop(0.7, bodyColor);
+            enemyGradient.addColorStop(1, '#000');
+            ctx.fillStyle = enemyGradient;
             ctx.fillRect(x, enemy.y, enemy.width, enemy.height);
             
-            // 적 테두리
+            // 적 테두리 (HD2D 스타일)
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.strokeRect(x, enemy.y, enemy.width, enemy.height);
             
-            // 적 하이라이트
+            // 적 하이라이트 (HD2D 스타일)
             ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.fillRect(x, enemy.y, enemy.width, 8);
             
-            // 적 눈 (더 크게)
+            // 적 눈 (HD2D 스타일)
             ctx.fillStyle = '#FFF';
             if (enemy.direction > 0) {
                 ctx.fillRect(x + 32, enemy.y + 18, 8, 8);
                 ctx.fillRect(x + 32, enemy.y + 33, 8, 8);
             } else {
                 ctx.fillRect(x + 2, enemy.y + 18, 8, 8);
-                ctx.fillRect(x + 2, enemy.y + 33, 8, 8);
+                ctx.fillRect(x + 2, enemy.y + 35, 8, 8);
             }
             
-            // 적 동공
+            // 적 동공 (HD2D 스타일)
             ctx.fillStyle = '#000';
             if (enemy.direction > 0) {
                 ctx.fillRect(x + 34, enemy.y + 20, 4, 4);
@@ -174,7 +212,7 @@ function renderEnemies() {
             ctx.fillText(stateText, x + enemy.width/2, enemy.y - 5);
             ctx.textAlign = 'left';
             
-            // 체력바 (더 크게)
+            // 체력바 (HD2D 스타일)
             const healthRatio = enemy.health / enemy.maxHealth;
             const healthBarWidth = enemy.width;
             const healthBarHeight = 8;
@@ -215,54 +253,61 @@ function renderExplosions() {
     });
 }
 
-// 코인 렌더링
+// 코인 렌더링 (HD2D 스타일)
 function renderCoins() {
     coins.forEach(coin => {
         if (!coin.collected) {
             const x = coin.x - cameraX;
             if (x + coin.width > 0 && x < canvas.width) {
-                // 코인 그림자
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                // 코인 그림자 (HD2D 스타일)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
                 ctx.beginPath();
-                ctx.arc(x + coin.width/2 + 3, coin.y + coin.height/2 + 3, coin.width/2, 0, Math.PI * 2);
+                ctx.arc(x + coin.width/2 + 4, coin.y + coin.height/2 + 4, coin.width/2, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 코인 몸체
-                ctx.fillStyle = '#FFD700';
+                // 코인 몸체 (HD2D 스타일)
+                const coinGradient = ctx.createRadialGradient(
+                    x + coin.width/2, coin.y + coin.height/2, 0,
+                    x + coin.width/2, coin.y + coin.height/2, coin.width/2
+                );
+                coinGradient.addColorStop(0, '#FFD700');
+                coinGradient.addColorStop(0.7, '#FFA500');
+                coinGradient.addColorStop(1, '#FF8C00');
+                ctx.fillStyle = coinGradient;
                 ctx.beginPath();
                 ctx.arc(x + coin.width/2, coin.y + coin.height/2, coin.width/2, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 코인 테두리
+                // 코인 테두리 (HD2D 스타일)
                 ctx.strokeStyle = '#B8860B';
                 ctx.lineWidth = 3;
                 ctx.stroke();
                 
-                // 코인 하이라이트
+                // 코인 하이라이트 (HD2D 스타일)
                 ctx.fillStyle = '#FFF';
                 ctx.beginPath();
-                ctx.arc(x + coin.width/2 - 4, coin.y + coin.height/2 - 4, 4, 0, Math.PI * 2);
+                ctx.arc(x + coin.width/2 - 3, coin.y + coin.height/2 - 3, 3, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 코인 반짝임 효과
+                // 코인 반짝임 효과 (HD2D 스타일)
                 ctx.fillStyle = '#FFD700';
-                ctx.globalAlpha = 0.6 + 0.4 * Math.sin(Date.now() * 0.01);
+                ctx.globalAlpha = 0.7 + 0.3 * Math.sin(Date.now() * 0.015);
                 ctx.beginPath();
                 ctx.arc(x + coin.width/2, coin.y + coin.height/2, coin.width/2, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
                 
-                // 코인 중앙 홀
+                // 코인 중앙 홀 (HD2D 스타일)
                 ctx.fillStyle = '#B8860B';
                 ctx.beginPath();
-                ctx.arc(x + coin.width/2, coin.y + coin.height/2, 3, 0, Math.PI * 2);
+                ctx.arc(x + coin.width/2, coin.y + coin.height/2, 2, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
     });
 }
 
-// 파티클 렌더링
+// 파티클 렌더링 (HD2D 스타일)
 function renderParticles() {
     particles.forEach(particle => {
         const x = particle.x - cameraX;
@@ -276,7 +321,7 @@ function renderParticles() {
             ctx.arc(x, particle.y, size, 0, Math.PI * 2);
             ctx.fill();
             
-            // 파티클 꼬리 효과
+            // 파티클 꼬리 효과 (HD2D 스타일)
             if (particle.life > 20) {
                 ctx.globalAlpha = (particle.life - 20) / 30 * 0.6;
                 ctx.beginPath();
@@ -284,7 +329,7 @@ function renderParticles() {
                 ctx.fill();
             }
             
-            // 파티클 하이라이트
+            // 파티클 하이라이트 (HD2D 스타일)
             ctx.globalAlpha = particle.life / 50 * 0.8;
             ctx.fillStyle = '#FFF';
             ctx.beginPath();
@@ -295,7 +340,7 @@ function renderParticles() {
     ctx.globalAlpha = 1;
 }
 
-// 플레이어 렌더링
+// 플레이어 렌더링 (HD2D 스타일)
 function renderPlayer() {
     const x = player.x - cameraX;
     
@@ -304,24 +349,28 @@ function renderPlayer() {
         ctx.globalAlpha = 0.5;
     }
     
-    // 플레이어 그림자
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.fillRect(x + 8, player.y + player.height + 8, player.width - 16, 15);
+    // 플레이어 그림자 (HD2D 스타일)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(x + 6, player.y + player.height + 6, player.width - 12, 12);
     
-    // 플레이어 몸체
-    ctx.fillStyle = '#4169E1';
+    // 플레이어 몸체 그라데이션 (HD2D 스타일)
+    const playerGradient = ctx.createLinearGradient(x, player.y, x, player.y + player.height);
+    playerGradient.addColorStop(0, '#4169E1');
+    playerGradient.addColorStop(0.7, '#1E90FF');
+    playerGradient.addColorStop(1, '#000080');
+    ctx.fillStyle = playerGradient;
     ctx.fillRect(x, player.y, player.width, player.height);
     
-    // 플레이어 테두리
+    // 플레이어 테두리 (HD2D 스타일)
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 3;
     ctx.strokeRect(x, player.y, player.width, player.height);
     
-    // 플레이어 하이라이트
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    // 플레이어 하이라이트 (HD2D 스타일)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.fillRect(x, player.y, player.width, 12);
     
-    // 플레이어 눈 (더 크게)
+    // 플레이어 눈 (HD2D 스타일)
     ctx.fillStyle = '#FFF';
     if (player.direction > 0) {
         ctx.fillRect(x + 38, player.y + 18, 10, 10);
@@ -331,7 +380,7 @@ function renderPlayer() {
         ctx.fillRect(x + 2, player.y + 35, 10, 10);
     }
     
-    // 플레이어 동공
+    // 플레이어 동공 (HD2D 스타일)
     ctx.fillStyle = '#000';
     if (player.direction > 0) {
         ctx.fillRect(x + 40, player.y + 20, 6, 6);
@@ -341,7 +390,7 @@ function renderPlayer() {
         ctx.fillRect(x + 4, player.y + 35, 6, 6);
     }
     
-    // 플레이어 입 (더 크게)
+    // 플레이어 입 (HD2D 스타일)
     ctx.fillStyle = '#FF69B4';
     if (player.direction > 0) {
         ctx.fillRect(x + 28, player.y + 42, 18, 6);
@@ -349,7 +398,7 @@ function renderPlayer() {
         ctx.fillRect(x + 4, player.y + 42, 18, 6);
     }
     
-    // 공격 상태 표시
+    // 공격 상태 표시 (HD2D 스타일)
     if (player.attacking) {
         // 공격 방향 표시
         ctx.fillStyle = '#FFD700';
@@ -366,7 +415,7 @@ function renderPlayer() {
         ctx.globalAlpha = 1;
     }
     
-    // 플레이어 체력바 (더 크게)
+    // 플레이어 체력바 (HD2D 스타일)
     const healthRatio = player.health / player.maxHealth;
     const healthBarWidth = player.width;
     const healthBarHeight = 8;
@@ -517,4 +566,4 @@ function updateUI() {
     }
 }
 
-console.log('게임 렌더링 시스템 (발사체 및 폭발 효과 추가 버전) 로드 완료!'); 
+console.log('게임 렌더링 시스템 (HD2D 스타일 적용 버전) 로드 완료!'); 

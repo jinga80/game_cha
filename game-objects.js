@@ -1,5 +1,5 @@
 // ========================================
-// 게임 객체 관리 (game-objects.js) - 공격 시스템 및 AI 개선 버전
+// 게임 객체 관리 (game-objects.js) - 언덕 낮춤 및 HD2D 스타일 적용 버전
 // ========================================
 
 // 플레이어 객체
@@ -190,6 +190,7 @@ function updatePlayer() {
                 player.velocityY = 0;
                 player.onGround = true;
                 player.jumping = false;
+                player.jumpCount = 0; // 착지 시 점프 횟수 초기화
             } else if (player.velocityY < 0 && player.y + player.height > platform.y + platform.height) {
                 // 아래에서 부딪힘
                 player.y = platform.y + platform.height;
@@ -212,7 +213,7 @@ function updatePlayer() {
     }
     
     // 공격 처리
-    if (keys['KeyF'] && !player.attacking && player.attackCooldown <= 0) {
+    if (keys['KeyF'] && player.attackCooldown <= 0) {
         attack();
     }
     
@@ -547,15 +548,15 @@ function nextStage() {
     
     console.log(`스테이지 ${currentStage} 시작!`);
     
-            // 플레이어 위치 재설정
-        player.x = 100;
-        player.y = 800;
-        player.velocityX = 0;
-        player.velocityY = 0;
-        
-        // 발사체 초기화
-        player.projectiles = [];
-        player.jumpCount = 0; // 점프 횟수 초기화
+    // 플레이어 위치 재설정
+    player.x = 100;
+    player.y = 800;
+    player.velocityX = 0;
+    player.velocityY = 0;
+    
+    // 발사체 초기화
+    player.projectiles = [];
+    player.jumpCount = 0; // 점프 횟수 초기화
     
     // 스테이지 재생성
     generateStage();
@@ -585,27 +586,27 @@ function generateStage() {
         type: 'ground'
     });
     
-    // 중간 플랫폼들 (점프 가능한 높이로 조정)
+    // 중간 플랫폼들 (HD2D 스타일로 낮춤)
     const platformPositions = [
-        {x: 400, y: 650, width: 200, height: 20},   // 700 → 650 (점프 가능)
-        {x: 800, y: 550, width: 200, height: 20},   // 600 → 550 (2단 점프 가능)
-        {x: 1200, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
-        {x: 1600, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
-        {x: 2000, y: 250, width: 200, height: 20},  // 300 → 250 (2단 점프 가능)
-        {x: 2400, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
-        {x: 2800, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
-        {x: 3200, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
-        {x: 3600, y: 650, width: 200, height: 20},  // 700 → 650 (점프 가능)
-        {x: 4000, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
-        {x: 4400, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
-        {x: 4800, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
-        {x: 5200, y: 250, width: 200, height: 20},  // 300 → 250 (2단 점프 가능)
-        {x: 5600, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
-        {x: 6000, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
-        {x: 6400, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
-        {x: 6800, y: 650, width: 200, height: 20},  // 700 → 650 (점프 가능)
-        {x: 7200, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
-        {x: 7600, y: 450, width: 200, height: 20}   // 500 → 450 (2단 점프 가능)
+        {x: 400, y: 700, width: 200, height: 20},   // 650 → 700 (더 낮게)
+        {x: 800, y: 650, width: 200, height: 20},   // 550 → 650 (더 낮게)
+        {x: 1200, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
+        {x: 1600, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
+        {x: 2000, y: 500, width: 200, height: 20},  // 250 → 500 (더 낮게)
+        {x: 2400, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
+        {x: 2800, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
+        {x: 3200, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
+        {x: 3600, y: 700, width: 200, height: 20},  // 650 → 700 (더 낮게)
+        {x: 4000, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
+        {x: 4400, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
+        {x: 4800, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
+        {x: 5200, y: 500, width: 200, height: 20},  // 250 → 500 (더 낮게)
+        {x: 5600, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
+        {x: 6000, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
+        {x: 6400, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
+        {x: 6800, y: 700, width: 200, height: 20},  // 650 → 700 (더 낮게)
+        {x: 7200, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
+        {x: 7600, y: 600, width: 200, height: 20}   // 450 → 600 (더 낮게)
     ];
     
     platformPositions.forEach(pos => {
@@ -642,12 +643,12 @@ function generateStage() {
         });
     });
     
-    // 코인 생성 (점프 가능한 위치에 최적화)
+    // 코인 생성 (HD2D 스타일에 맞게 최적화)
     coins = [];
     
-    // 지면 코인들
-    for (let i = 0; i < 20; i++) {
-        const x = 200 + i * 400;
+    // 지면 코인들 (더 넓은 간격)
+    for (let i = 0; i < 25; i++) {
+        const x = 150 + i * 320; // 400 → 320으로 간격 축소
         const y = groundLevel - 30; // 지면 위
         coins.push({
             x: x,
@@ -658,9 +659,9 @@ function generateStage() {
         });
     }
     
-    // 플랫폼 위 코인들
+    // 플랫폼 위 코인들 (더 많은 플랫폼에 배치)
     platformPositions.forEach((platform, index) => {
-        if (index % 2 === 0) { // 짝수 인덱스 플랫폼에만 코인 배치
+        if (index % 3 === 0 || index % 3 === 1) { // 2/3 플랫폼에 코인 배치
             coins.push({
                 x: platform.x + platform.width / 2 - 10,
                 y: platform.y - 30,
@@ -671,10 +672,10 @@ function generateStage() {
         }
     });
     
-    // 공중 코인들 (2단 점프로 획득 가능)
-    for (let i = 0; i < 15; i++) {
-        const x = 300 + i * 500;
-        const y = 200 + Math.sin(i * 0.5) * 100; // 사인파 형태로 배치
+    // 공중 코인들 (HD2D 스타일에 맞게 조정)
+    for (let i = 0; i < 20; i++) {
+        const x = 200 + i * 400;
+        const y = 300 + Math.sin(i * 0.3) * 80; // 사인파 형태로 배치 (높이 조정)
         coins.push({
             x: x,
             y: y,
@@ -731,4 +732,4 @@ function generateEnemyPositions() {
     return positions;
 }
 
-console.log('게임 객체 관리 시스템 (공격 시스템 및 AI 개선 버전) 로드 완료!'); 
+console.log('게임 객체 관리 시스템 (언덕 낮춤 및 HD2D 스타일 적용 버전) 로드 완료!'); 
