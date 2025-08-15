@@ -1,5 +1,5 @@
 // ========================================
-// 게임 객체 관리 (game-objects.js) - 언덕 낮춤 및 HD2D 스타일 적용 버전
+// 게임 객체 관리 (game-objects.js) - 적 수 증가 및 대시 기능 구현 버전
 // ========================================
 
 // 플레이어 객체
@@ -20,7 +20,8 @@ const player = {
     invincible: false, // 무적 상태
     invincibleTime: 0, // 무적 시간
     projectiles: [], // 발사체 배열
-    jumpCount: 0 // 점프 횟수
+    jumpCount: 0, // 점프 횟수
+    character: '기본' // 선택된 캐릭터
 };
 
 // 게임 객체들
@@ -154,12 +155,23 @@ let explosions = [];
 
 // 플레이어 업데이트
 function updatePlayer() {
-    // 이동 처리
+    // 이동 처리 (대시 기능 포함)
+    let currentMoveSpeed = MOVE_SPEED;
+    if (keys['KeyS'] && (keys['KeyA'] || keys['ArrowLeft'] || keys['KeyD'] || keys['ArrowRight'])) {
+        currentMoveSpeed = DASH_SPEED; // 대시 속도
+        isDashing = true;
+        
+        // 대시 파티클 생성
+        if (Math.random() < 0.3) {
+            createParticle(player.x + player.width/2, player.y + player.height, '#00FFFF');
+        }
+    }
+    
     if (keys['KeyA'] || keys['ArrowLeft']) {
-        player.velocityX = -MOVE_SPEED;
+        player.velocityX = -currentMoveSpeed;
         player.direction = -1;
     } else if (keys['KeyD'] || keys['ArrowRight']) {
-        player.velocityX = MOVE_SPEED;
+        player.velocityX = currentMoveSpeed;
         player.direction = 1;
     } else {
         player.velocityX *= 0.8; // 마찰력
@@ -433,6 +445,10 @@ function enemyAttack(enemy) {
         damage = 20; // 기본 데미지
     }
     
+    // 난이도별 데미지 조정
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    damage = Math.round(damage * difficulty.enemyDamage);
+    
     // 플레이어에게 데미지 적용
     takeDamage(damage);
     
@@ -494,7 +510,7 @@ function updateStageProgress() {
     const progressFromCoins = stageProgress;
     
     // 적 처치 기반 진행도
-    const totalEnemies = 15; // 스테이지당 총 적 수
+    const totalEnemies = 25; // 스테이지당 총 적 수 증가
     const remainingEnemies = enemies.length;
     const defeatedEnemies = totalEnemies - remainingEnemies;
     const progressFromEnemies = (defeatedEnemies / totalEnemies) * 30; // 적 처치 기반 30%
@@ -593,20 +609,20 @@ function generateStage() {
         {x: 1200, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
         {x: 1600, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
         {x: 2000, y: 500, width: 200, height: 20},  // 250 → 500 (더 낮게)
-        {x: 2400, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
-        {x: 2800, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
-        {x: 3200, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
-        {x: 3600, y: 700, width: 200, height: 20},  // 650 → 700 (더 낮게)
-        {x: 4000, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
-        {x: 4400, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
-        {x: 4800, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
-        {x: 5200, y: 500, width: 200, height: 20},  // 250 → 500 (더 낮게)
-        {x: 5600, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
-        {x: 6000, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
-        {x: 6400, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
-        {x: 6800, y: 700, width: 200, height: 20},  // 650 → 700 (더 낮게)
-        {x: 7200, y: 650, width: 200, height: 20},  // 550 → 650 (더 낮게)
-        {x: 7600, y: 600, width: 200, height: 20}   // 450 → 600 (더 낮게)
+        {x: 2400, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
+        {x: 2800, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
+        {x: 3200, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
+        {x: 3600, y: 700, width: 200, height: 20},  // 700 → 700 (더 낮게)
+        {x: 4000, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
+        {x: 4400, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
+        {x: 4800, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
+        {x: 5200, y: 500, width: 200, height: 20},  // 300 → 500 (더 낮게)
+        {x: 5600, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
+        {x: 6000, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
+        {x: 6400, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
+        {x: 6800, y: 700, width: 200, height: 20},  // 700 → 700 (더 낮게)
+        {x: 7200, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
+        {x: 7600, y: 600, width: 200, height: 20}   // 500 → 600 (더 낮게)
     ];
     
     platformPositions.forEach(pos => {
@@ -619,7 +635,7 @@ function generateStage() {
         });
     });
     
-    // 적 생성 (스테이지별로 다른 적 배치)
+    // 적 생성 (스테이지별로 다른 적 배치, 수량 대폭 증가)
     const enemyPositions = generateEnemyPositions();
     
     enemyPositions.forEach(pos => {
@@ -688,23 +704,44 @@ function generateStage() {
     console.log(`스테이지 생성 완료! 플랫폼: ${platforms.length}, 적: ${enemies.length}, 코인: ${coins.length}`);
 }
 
-// 스테이지별 적 위치 및 능력치 생성
+// 스테이지별 적 위치 및 능력치 생성 (수량 대폭 증가)
 function generateEnemyPositions() {
     const groundLevel = canvas.height - 100;
     const positions = [];
     
-    // 기본 적들
+    // 기본 적들 (수량 대폭 증가)
     const basicEnemies = [
-        {x: 500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 1000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        // 첫 번째 구간 (0-2000)
+        {x: 300, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 600, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 900, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
         {x: 1500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 2000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        
+        // 두 번째 구간 (2000-4000)
+        {x: 2200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
         {x: 2500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 3000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 3500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 4000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        
+        // 세 번째 구간 (4000-6000)
+        {x: 4200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
         {x: 4500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 5000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15}
+        {x: 4800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        
+        // 네 번째 구간 (6000-8000)
+        {x: 6200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 6500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 6800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15}
     ];
     
     positions.push(...basicEnemies);
@@ -729,7 +766,14 @@ function generateEnemyPositions() {
         );
     }
     
+    // 난이도별 적 능력치 조정
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    positions.forEach(pos => {
+        pos.health = Math.round(pos.health * difficulty.enemyHealth);
+        pos.velocityX = pos.velocityX * difficulty.enemySpeed;
+    });
+    
     return positions;
 }
 
-console.log('게임 객체 관리 시스템 (언덕 낮춤 및 HD2D 스타일 적용 버전) 로드 완료!'); 
+console.log('게임 객체 관리 시스템 (적 수 증가 및 대시 기능 구현 버전) 로드 완료!'); 

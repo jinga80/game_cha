@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 연속 공격 버그 수정 및 HD2D 스타일 버전
+// 게임 핵심 로직 (game-core.js) - 3단 점프 및 게임 시스템 확장 버전
 // ========================================
 
 // 게임 상태 관리
@@ -9,12 +9,41 @@ let score = 0;
 let lives = 5;
 let currentStage = 1;
 let isFullscreen = false;
+let selectedCharacter = '기본'; // 선택된 캐릭터
+let gameDifficulty = '보통'; // 게임 난이도
+let isDashing = false; // 대시 상태
 
 // 게임 설정
 const GRAVITY = 0.8;
 const JUMP_POWER = 18;
 const MOVE_SPEED = 6;
+const DASH_SPEED = 12; // 대시 속도
 const STAGE_WIDTH = 8000; // 맵 크기 대폭 증가
+
+// 난이도별 설정
+const DIFFICULTY_SETTINGS = {
+    '쉬움': {
+        enemyHealth: 0.7,    // 적 체력 70%
+        enemyDamage: 0.6,    // 적 데미지 60%
+        enemySpeed: 0.8,     // 적 속도 80%
+        playerHealth: 1.2,   // 플레이어 체력 120%
+        lives: 7             // 생명 7개
+    },
+    '보통': {
+        enemyHealth: 1.0,    // 적 체력 100%
+        enemyDamage: 1.0,    // 적 데미지 100%
+        enemySpeed: 1.0,     // 적 속도 100%
+        playerHealth: 1.0,   // 플레이어 체력 100%
+        lives: 5             // 생명 5개
+    },
+    '어려움': {
+        enemyHealth: 1.3,    // 적 체력 130%
+        enemyDamage: 1.4,    // 적 데미지 140%
+        enemySpeed: 1.2,     // 적 속도 120%
+        playerHealth: 0.8,   // 플레이어 체력 80%
+        lives: 3             // 생명 3개
+    }
+};
 
 // 키보드 입력 상태
 const keys = {};
@@ -179,6 +208,11 @@ function setupEventListeners() {
     
     document.addEventListener('keyup', (e) => {
         keys[e.code] = false;
+        
+        // 대시 키를 떼면 대시 상태 해제
+        if (e.code === 'KeyS') {
+            isDashing = false;
+        }
     });
     
     // 윈도우 리사이즈 이벤트
@@ -201,16 +235,20 @@ function startGame() {
     // UI 숨기기
     const startScreen = document.getElementById('startScreen');
     const gameOverScreen = document.getElementById('gameOverScreen');
+    const characterSelectScreen = document.getElementById('characterSelectScreen');
     
     if (startScreen) startScreen.style.display = 'none';
     if (gameOverScreen) gameOverScreen.style.display = 'none';
+    if (characterSelectScreen) characterSelectScreen.style.display = 'none';
     
     // 게임 상태 초기화
     gameRunning = true;
     gamePaused = false;
     score = 0;
-    lives = 5;
-    currentStage = 1;
+    
+    // 난이도별 설정 적용
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    lives = difficulty.lives;
     
     // 플레이어 초기화
     resetPlayer();
@@ -242,7 +280,7 @@ function togglePause() {
     console.log(gamePaused ? '게임 일시정지' : '게임 재개');
 }
 
-// 점프 함수 (2단 점프 구현)
+// 점프 함수 (3단 점프 구현)
 function jump() {
     if (player.onGround && !player.jumping) {
         // 첫 번째 점프
@@ -255,15 +293,22 @@ function jump() {
         createParticle(player.x + player.width/2, player.y + player.height, '#87CEEB');
         
         console.log('첫 번째 점프!');
-    } else if (player.jumping && player.jumpCount < 2) {
-        // 두 번째 점프 (공중에서)
-        player.velocityY = -JUMP_POWER * 0.8; // 두 번째 점프는 약간 약함
-        player.jumpCount = 2;
+    } else if (player.jumping && player.jumpCount < 3) {
+        // 두 번째, 세 번째 점프 (공중에서)
+        const jumpPower = player.jumpCount === 2 ? JUMP_POWER * 0.8 : JUMP_POWER * 0.6;
+        player.velocityY = -jumpPower;
+        player.jumpCount++;
         
-        // 이중 점프 파티클 생성
-        createParticle(player.x + player.width/2, player.y + player.height, '#FFD700');
+        // 점프 파티클 생성 (색상 구분)
+        let particleColor;
+        if (player.jumpCount === 2) {
+            particleColor = '#FFD700'; // 골드
+        } else {
+            particleColor = '#FF4500'; // 오렌지
+        }
+        createParticle(player.x + player.width/2, player.y + player.height, particleColor);
         
-        console.log('두 번째 점프!');
+        console.log(`${player.jumpCount}번째 점프!`);
     }
 }
 
@@ -273,13 +318,19 @@ function resetPlayer() {
     player.y = 800;
     player.velocityX = 0;
     player.velocityY = 0;
-    player.health = 300;
+    
+    // 난이도별 체력 설정
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    player.maxHealth = 300 * difficulty.playerHealth;
+    player.health = player.maxHealth;
+    
     player.attacking = false;
     player.attackCooldown = 0;
     player.invincible = false;
     player.invincibleTime = 0;
     player.projectiles = []; // 발사체 배열 초기화
     player.jumpCount = 0; // 점프 횟수 초기화
+    isDashing = false; // 대시 상태 초기화
 }
 
 // 공격 함수 (연속 공격 시스템 - 버그 수정)
@@ -381,7 +432,7 @@ function takeDamage(damage) {
     
     // 화면 흔들림 효과 (렌더링에서 처리)
     
-    console.log(`데미지 받음: ${damage}, 남은 체력: ${player.health}`);
+    console.log(`데미지 받음: ${damage}, 남은 생명: ${lives}`);
     
     // 체력이 0이 되면 생명 감소
     if (player.health <= 0) {
@@ -434,7 +485,8 @@ function showControlGuide() {
 **이동:**
 - A / ←: 왼쪽 이동
 - D / →: 오른쪽 이동
-- 스페이스바: 점프 (2단 점프 가능!)
+- 스페이스바: 점프 (3단 점프 가능!)
+- S: 대시 (빠른 이동)
 
 **액션:**
 - F: 무기 발사 (골드 발사체, 연속 발사!)
@@ -448,7 +500,8 @@ function showControlGuide() {
 **게임 시스템:**
 - F키로 적을 연속 공격하세요! (0.13초마다!)
 - 발사체가 적에게 맞으면 폭발 효과와 함께 데미지!
-- 2단 점프로 더 높은 곳으로 이동 가능!
+- 3단 점프로 더 높은 곳으로 이동 가능!
+- S키로 대시하여 빠르게 이동!
 - 적을 물리치고 코인을 모으세요!
 - 스테이지 진행도가 100%가 되면 다음 스테이지로!
 - 체력이 0이 되면 생명이 감소합니다
@@ -489,4 +542,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (연속 공격 버그 수정 및 HD2D 스타일 버전) 로드 완료!'); 
+console.log('게임 핵심 로직 (3단 점프 및 게임 시스템 확장 버전) 로드 완료!'); 

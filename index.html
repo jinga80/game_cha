@@ -3,351 +3,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="PC 전용 1080p 고화질 플랫폼 어드벤처 게임">
-    <title>재미있는게임 - 커비 스타일 100스테이지 행성 어드벤처</title>
+    <title>재미있는게임 - v1.11</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #1a1a2e;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        #gameCanvas {
-            display: block;
-            margin: 0 auto;
-            border: 3px solid #333;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
-            width: 100vw;
-            height: 100vh;
-            max-width: none;
-            max-height: none;
-        }
-
-        .game-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            padding: 0;
-            position: relative;
-        }
-
-        .game-ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-size: 16px;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #FFD700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-            min-width: 200px;
-        }
-
-        .game-ui h2 {
-            margin: 0 0 10px 0;
-            color: #FFD700;
-            font-size: 18px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-        }
-
-        .ui-row {
-            display: flex;
-            align-items: center;
-            margin: 6px 0;
-            gap: 8px;
-        }
-
-        .ui-label {
-            font-weight: bold;
-            color: #87CEEB;
-            min-width: 60px;
-            font-size: 14px;
-        }
-
-        .ui-value {
-            color: #FFF;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .health-bar {
-            width: 200px;
-            height: 20px;
-            background: #333;
-            border: 2px solid #FFF;
-            border-radius: 6px;
-            overflow: hidden;
-            margin: 10px 0;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00FF00, #FFFF00, #FF0000);
-            transition: width 0.3s ease;
-            border-radius: 4px;
-        }
-
-        .lives {
-            display: flex;
-            gap: 5px;
-            margin: 8px 0;
-        }
-
-        .heart {
-            width: 20px;
-            height: 20px;
-            background: #FF69B4;
-            clip-path: path('M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z');
-            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.5));
-        }
-
-        .start-screen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 20px;
-            border: 3px solid #FFD700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            min-width: 500px;
-        }
-
-        .start-screen h1 {
-            font-size: 56px;
-            color: #FFD700;
-            margin-bottom: 30px;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-        }
-
-        .start-screen p {
-            font-size: 28px;
-            margin-bottom: 25px;
-            color: #87CEEB;
-        }
-
-        .start-screen .developer {
-            font-size: 22px;
-            margin-bottom: 35px;
-            color: #FF69B4;
-        }
-
-        .game-button {
-            font-size: 26px;
-            padding: 18px 35px;
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            margin: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .game-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .control-button {
-            background: linear-gradient(135deg, #2196F3, #1976D2);
-        }
-
-        .game-over-screen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 20px;
-            border: 3px solid #FF6B6B;
-            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
-            min-width: 500px;
-        }
-
-        .game-over-screen h1 {
-            font-size: 56px;
-            color: #FF6B6B;
-            margin-bottom: 30px;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-        }
-
-        .game-over-screen p {
-            font-size: 28px;
-            margin-bottom: 25px;
-            color: #87CEEB;
-        }
-
-        .restart-button {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-        }
-
-        .version-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: #FFD700;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #FFD700;
-        }
-
-        .fullscreen-toggle {
-            position: absolute;
-            top: 20px;
-            right: 120px;
-            color: #FFD700;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #FFD700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .fullscreen-toggle:hover {
-            background: rgba(255, 215, 0, 0.2);
-            transform: scale(1.05);
-        }
-
-        /* 전체화면 모드 스타일 */
-        .fullscreen .game-container {
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .fullscreen #gameCanvas {
-            width: 100vw;
-            height: 100vh;
-            border: none;
-        }
-
-        .fullscreen .game-ui {
-            top: 15px;
-            left: 15px;
-            font-size: 14px;
-            padding: 12px;
-        }
-
-        .fullscreen .game-ui h2 {
-            font-size: 16px;
-        }
-
-        .fullscreen .ui-label {
-            min-width: 50px;
-            font-size: 12px;
-        }
-
-        .fullscreen .ui-value {
-            font-size: 12px;
-        }
-
-        .fullscreen .health-bar {
-            width: 150px;
-            height: 16px;
-        }
-
-        .fullscreen .heart {
-            width: 16px;
-            height: 16px;
-        }
-
-        .fullscreen .version-info,
-        .fullscreen .fullscreen-toggle {
-            top: 15px;
-            font-size: 14px;
-            padding: 6px 10px;
-        }
-
-        .fullscreen .fullscreen-toggle {
-            right: 100px;
-        }
-    </style>
 </head>
 <body>
-    <div class="game-container" id="gameContainer">
+    <div id="gameContainer">
+        <!-- 게임 캔버스 -->
         <canvas id="gameCanvas" width="1920" height="1080"></canvas>
         
         <!-- 버전 정보 -->
-        <div class="version-info">v1.10</div>
+        <div class="version-info">v1.11</div>
         
         <!-- 전체화면 토글 버튼 -->
-        <div class="fullscreen-toggle" id="fullscreenToggle">⛶ 전체화면</div>
+        <button id="fullscreenToggle" class="fullscreen-toggle">⛶</button>
+        
+        <!-- 게임 시작 화면 -->
+        <div id="startScreen" class="game-screen">
+            <div class="game-title">
+                <h1>🎮 재미있는게임 🎮</h1>
+                <p class="subtitle">진건우 제작</p>
+            </div>
+            
+            <div class="menu-buttons">
+                <button id="startButton" class="menu-button primary">게임 시작</button>
+                <button id="controlGuideButton" class="menu-button secondary">조작법 보기</button>
+            </div>
+            
+            <div class="game-info">
+                <p>🎯 3단 점프 • 🚀 대시 기능 • ⚔️ 연속 공격</p>
+                <p>🎨 HD2D 그래픽 • 🌍 100스테이지 • 🎮 PC 최적화</p>
+            </div>
+        </div>
+        
+        <!-- 캐릭터 선택 화면 -->
+        <div id="characterSelectScreen" class="game-screen" style="display: none;">
+            <div class="screen-title">
+                <h2>🎭 캐릭터 선택</h2>
+                <p>플레이할 캐릭터를 선택하세요</p>
+            </div>
+            
+            <div class="character-grid">
+                <div class="character-card" data-character="기본">
+                    <div class="character-avatar">👤</div>
+                    <h3>기본</h3>
+                    <p>균형잡힌 능력치</p>
+                    <div class="character-stats">
+                        <span>❤️ 300</span>
+                        <span>⚔️ 50</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="검사">
+                    <div class="character-avatar">⚔️</div>
+                    <h3>검사</h3>
+                    <p>높은 공격력</p>
+                    <div class="character-stats">
+                        <span>❤️ 250</span>
+                        <span>⚔️ 80</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="궁수">
+                    <div class="character-avatar">🏹</div>
+                    <h3>궁수</h3>
+                    <p>원거리 공격</p>
+                    <div class="character-stats">
+                        <span>❤️ 200</span>
+                        <span>⚔️ 60</span>
+                        <span>🚀 7</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="마법사">
+                    <div class="character-avatar">🔮</div>
+                    <h3>마법사</h3>
+                    <p>마법 공격</p>
+                    <div class="character-stats">
+                        <span>❤️ 180</span>
+                        <span>⚔️ 90</span>
+                        <span>🚀 4</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="거인">
+                    <div class="character-avatar">👹</div>
+                    <h3>거인</h3>
+                    <p>높은 체력</p>
+                    <div class="character-stats">
+                        <span>❤️ 500</span>
+                        <span>⚔️ 40</span>
+                        <span>🚀 3</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="발키리">
+                    <div class="character-avatar">🛡️</div>
+                    <h3>발키리</h3>
+                    <p>방어 특화</p>
+                    <div class="character-stats">
+                        <span>❤️ 400</span>
+                        <span>⚔️ 45</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="difficulty-selector">
+                <h3>🎯 난이도 선택</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="쉬움">쉬움</button>
+                    <button class="difficulty-btn active" data-difficulty="보통">보통</button>
+                    <button class="difficulty-btn" data-difficulty="어려움">어려움</button>
+                </div>
+            </div>
+            
+            <div class="menu-buttons">
+                <button id="backToStartButton" class="menu-button secondary">뒤로 가기</button>
+                <button id="startGameButton" class="menu-button primary">게임 시작</button>
+            </div>
+        </div>
         
         <!-- 게임 UI -->
-        <div class="game-ui">
-            <h2>🎮 재미있는게임</h2>
-            <div class="ui-row">
-                <span class="ui-label">스테이지:</span>
-                <span class="ui-value" id="stageDisplay">1</span>
+        <div id="gameUI" class="game-ui" style="display: none;">
+            <!-- 상단 정보 바 -->
+            <div class="top-info-bar">
+                <div class="info-item">
+                    <span class="label">스테이지:</span>
+                    <span id="stageDisplay" class="value">1</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="label">점수:</span>
+                    <span id="scoreDisplay" class="value">0</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="label">생명:</span>
+                    <div id="heartsContainer" class="hearts"></div>
+                </div>
             </div>
-            <div class="ui-row">
-                <span class="ui-label">점수:</span>
-                <span class="ui-value" id="scoreDisplay">0</span>
+            
+            <!-- 체력바 -->
+            <div class="health-bar-container">
+                <div class="health-bar">
+                    <div id="healthFill" class="health-fill"></div>
+                </div>
+                <span id="healthDisplay" class="health-text">300</span>
             </div>
-            <div class="ui-row">
-                <span class="ui-label">생명:</span>
-                <span class="ui-value" id="livesDisplay">5</span>
-            </div>
-            <div class="lives" id="heartsContainer"></div>
-            <div class="ui-row">
-                <span class="ui-label">체력:</span>
-                <span class="ui-value" id="healthDisplay">300</span>/300
-            </div>
-            <div class="health-bar">
-                <div class="health-fill" id="healthFill" style="width: 100%"></div>
+            
+            <!-- 게임 컨트롤 -->
+            <div class="game-controls">
+                <button id="pauseButton" class="control-btn">⏸️</button>
+                <button id="restartButton" class="control-btn">🔄</button>
             </div>
         </div>
-
-        <!-- 시작 화면 -->
-        <div id="startScreen" class="start-screen">
-            <h1>🎮 재미있는게임</h1>
-            <p>커비 스타일 100스테이지 행성 어드벤처</p>
-            <p class="developer">개발자: 진건우</p>
-            <button id="startButton" class="game-button">🚀 게임 시작</button>
-            <button id="controlGuideButton" class="game-button control-button">📖 컨트롤 가이드</button>
-        </div>
-
+        
         <!-- 게임 오버 화면 -->
-        <div id="gameOverScreen" class="game-over-screen" style="display: none;">
-            <h1>💀 게임 오버</h1>
-            <p>최종 점수: <span id="finalScore">0</span></p>
-            <p>달성 스테이지: <span id="finalStage">1</span></p>
-            <button id="restartButton" class="game-button restart-button">🔄 다시 시작</button>
+        <div id="gameOverScreen" class="game-screen" style="display: none;">
+            <div class="game-over-content">
+                <h2>💀 게임 오버</h2>
+                <div class="final-stats">
+                    <p>최종 점수: <span id="finalScore">0</span></p>
+                    <p>도달 스테이지: <span id="finalStage">1</span></p>
+                </div>
+                <div class="menu-buttons">
+                    <button id="restartButton" class="menu-button primary">다시 시작</button>
+                    <button id="backToMenuButton" class="menu-button secondary">메인 메뉴</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 게임 스크립트들 -->
+    <!-- 게임 스크립트 -->
     <script src="game-core.js"></script>
     <script src="game-objects.js"></script>
     <script src="game-render.js"></script>
     <script src="game.js"></script>
+    
+    <script>
+        // 캐릭터 선택 시스템
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('startButton');
+            const characterSelectScreen = document.getElementById('characterSelectScreen');
+            const startScreen = document.getElementById('startScreen');
+            const characterCards = document.querySelectorAll('.character-card');
+            const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+            const startGameButton = document.getElementById('startGameButton');
+            const backToStartButton = document.getElementById('backToStartButton');
+            const backToMenuButton = document.getElementById('backToMenuButton');
+            
+            // 게임 시작 버튼 클릭
+            startButton.addEventListener('click', function() {
+                startScreen.style.display = 'none';
+                characterSelectScreen.style.display = 'block';
+            });
+            
+            // 뒤로 가기 버튼 클릭
+            backToStartButton.addEventListener('click', function() {
+                characterSelectScreen.style.display = 'none';
+                startScreen.style.display = 'block';
+            });
+            
+            // 메인 메뉴로 돌아가기
+            backToMenuButton.addEventListener('click', function() {
+                location.reload();
+            });
+            
+            // 캐릭터 선택
+            characterCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // 기존 선택 해제
+                    characterCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // 현재 캐릭터 선택
+                    this.classList.add('selected');
+                    selectedCharacter = this.dataset.character;
+                    
+                    console.log('선택된 캐릭터:', selectedCharacter);
+                });
+            });
+            
+            // 난이도 선택
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 기존 선택 해제
+                    difficultyButtons.forEach(b => b.classList.remove('active'));
+                    
+                    // 현재 난이도 선택
+                    this.classList.add('active');
+                    gameDifficulty = this.dataset.difficulty;
+                    
+                    console.log('선택된 난이도:', gameDifficulty);
+                });
+            });
+            
+            // 게임 시작 버튼 클릭
+            startGameButton.addEventListener('click', function() {
+                if (!selectedCharacter) {
+                    alert('캐릭터를 선택해주세요!');
+                    return;
+                }
+                
+                // 게임 시작
+                startGame();
+            });
+            
+            // 일시정지 버튼
+            const pauseButton = document.getElementById('pauseButton');
+            if (pauseButton) {
+                pauseButton.addEventListener('click', function() {
+                    togglePause();
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
