@@ -1,5 +1,5 @@
 // ========================================
-// 게임 객체 관리 (game-objects.js)
+// 게임 객체 관리 (game-objects.js) - 밸런스 개선 버전
 // ========================================
 
 // 플레이어 객체
@@ -16,7 +16,9 @@ const player = {
     maxHealth: 300,
     direction: 1, // 1: 오른쪽, -1: 왼쪽
     attacking: false,
-    attackCooldown: 0
+    attackCooldown: 0,
+    invincible: false, // 무적 상태
+    invincibleTime: 0 // 무적 시간
 };
 
 // 게임 객체들
@@ -25,6 +27,11 @@ let enemies = [];
 let coins = [];
 let particles = [];
 let cameraX = 0;
+
+// 스테이지 관련 변수
+let stageProgress = 0; // 스테이지 진행도 (0-100)
+let stageComplete = false; // 스테이지 완료 여부
+let stageTimer = 0; // 스테이지 타이머
 
 // 플레이어 업데이트
 function updatePlayer() {
@@ -95,10 +102,21 @@ function updatePlayer() {
         player.attackCooldown--;
     }
     
+    // 무적 시간 감소
+    if (player.invincibleTime > 0) {
+        player.invincibleTime--;
+        if (player.invincibleTime <= 0) {
+            player.invincible = false;
+        }
+    }
+    
     // 카메라 따라가기
     cameraX = player.x - canvas.width / 2;
     if (cameraX < 0) cameraX = 0;
     if (cameraX > STAGE_WIDTH - canvas.width) cameraX = STAGE_WIDTH - canvas.width;
+    
+    // 스테이지 진행도 업데이트
+    updateStageProgress();
 }
 
 // 적 업데이트
@@ -113,23 +131,66 @@ function updateEnemies() {
             enemy.direction *= -1;
         }
         
-        // 플레이어와의 충돌 체크
+        // 적 공격 쿨다운 감소
+        if (enemy.attackCooldown > 0) {
+            enemy.attackCooldown--;
+        }
+        
+        // 플레이어와의 충돌 체크 (적 공격)
         if (player.x < enemy.x + enemy.width &&
             player.x + player.width > enemy.x &&
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
             
-            if (!player.attacking) {
-                takeDamage(50);
-                console.log('적에게 공격받음!');
+            if (!player.attacking && !player.invincible && enemy.attackCooldown <= 0) {
+                // 적이 플레이어를 공격
+                enemyAttack(enemy);
             }
         }
         
-        // 공격 쿨다운 감소
-        if (enemy.attackCooldown > 0) {
-            enemy.attackCooldown--;
+        // 적이 화면 밖으로 나가면 제거
+        if (enemy.x < cameraX - 100 || enemy.x > cameraX + canvas.width + 100) {
+            const index = enemies.indexOf(enemy);
+            if (index > -1) {
+                enemies.splice(index, 1);
+                // 적 제거 시 점수 추가
+                score += 50;
+            }
         }
     });
+}
+
+// 적 공격 함수
+function enemyAttack(enemy) {
+    // 적 공격 쿨다운 설정
+    enemy.attackCooldown = 120; // 2초 (60fps 기준)
+    
+    // 플레이어에게 데미지 (적 타입에 따라 다른 데미지)
+    let damage = 0;
+    if (enemy.type === '나무돌이') {
+        damage = 15; // 나무돌이는 약한 공격
+    } else if (enemy.type === '나무왕') {
+        damage = 25; // 나무왕은 중간 공격
+    } else if (enemy.type === '포탑몬') {
+        damage = 20; // 포탑몬은 중간 공격
+    } else {
+        damage = 20; // 기본 데미지
+    }
+    
+    // 플레이어에게 데미지 적용
+    takeDamage(damage);
+    
+    // 공격 파티클 생성
+    createParticle(player.x + player.width/2, player.y + player.height/2, '#FF0000');
+    
+    // 플레이어를 밀어내기
+    if (enemy.x < player.x) {
+        player.velocityX = 8; // 오른쪽으로 밀어내기
+    } else {
+        player.velocityX = -8; // 왼쪽으로 밀어내기
+    }
+    
+    console.log(`${enemy.type}의 공격! 데미지: ${damage}`);
 }
 
 // 코인 업데이트
@@ -146,6 +207,9 @@ function updateCoins() {
                 score += 100;
                 createParticle(coin.x + coin.width/2, coin.y + coin.height/2, '#FFD700');
                 console.log('코인 획득!');
+                
+                // 스테이지 진행도 증가
+                stageProgress += 2;
             }
         }
     });
@@ -163,6 +227,82 @@ function updateParticles() {
             particles.splice(i, 1);
         }
     }
+}
+
+// 스테이지 진행도 업데이트
+function updateStageProgress() {
+    // 플레이어 위치에 따른 진행도 계산
+    const progressFromPosition = (player.x / STAGE_WIDTH) * 60; // 위치 기반 60%
+    
+    // 코인 수집 기반 진행도 (이미 updateCoins에서 처리됨)
+    const progressFromCoins = stageProgress;
+    
+    // 적 처치 기반 진행도
+    const totalEnemies = 15; // 스테이지당 총 적 수
+    const remainingEnemies = enemies.length;
+    const defeatedEnemies = totalEnemies - remainingEnemies;
+    const progressFromEnemies = (defeatedEnemies / totalEnemies) * 30; // 적 처치 기반 30%
+    
+    // 전체 진행도 계산
+    const totalProgress = Math.min(progressFromPosition + progressFromCoins + progressFromEnemies, 100);
+    
+    if (totalProgress >= 100 && !stageComplete) {
+        completeStage();
+    }
+}
+
+// 스테이지 완료
+function completeStage() {
+    stageComplete = true;
+    console.log(`스테이지 ${currentStage} 완료!`);
+    
+    // 완료 파티클 생성
+    for (let i = 0; i < 20; i++) {
+        createParticle(
+            player.x + player.width/2 + (Math.random() - 0.5) * 100,
+            player.y + player.height/2 + (Math.random() - 0.5) * 100,
+            '#00FF00'
+        );
+    }
+    
+    // 스테이지 완료 메시지 표시
+    showStageCompleteMessage();
+    
+    // 3초 후 다음 스테이지로
+    setTimeout(() => {
+        nextStage();
+    }, 3000);
+}
+
+// 스테이지 완료 메시지 표시
+function showStageCompleteMessage() {
+    // 메시지 파티클 생성
+    const message = `스테이지 ${currentStage} 완료!`;
+    console.log(message);
+    
+    // 화면에 메시지 표시 (렌더링에서 처리)
+}
+
+// 다음 스테이지로
+function nextStage() {
+    currentStage++;
+    stageProgress = 0;
+    stageComplete = false;
+    stageTimer = 0;
+    
+    console.log(`스테이지 ${currentStage} 시작!`);
+    
+    // 플레이어 위치 재설정
+    player.x = 100;
+    player.y = 800;
+    player.velocityX = 0;
+    player.velocityY = 0;
+    
+    // 스테이지 재생성
+    generateStage();
+    
+    // UI 업데이트
+    updateUI();
 }
 
 // 스테이지 생성
@@ -218,24 +358,8 @@ function generateStage() {
         });
     });
     
-    // 적 생성
-    const enemyPositions = [
-        {x: 500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 1000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 1500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 2000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 2500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 3000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 3500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 4000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 4500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 5000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 5500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 6000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 6500, y: groundLevel - 60, type: '나무돌이'},
-        {x: 7000, y: groundLevel - 60, type: '나무돌이'},
-        {x: 7500, y: groundLevel - 60, type: '나무돌이'}
-    ];
+    // 적 생성 (스테이지별로 다른 적 배치)
+    const enemyPositions = generateEnemyPositions();
     
     enemyPositions.forEach(pos => {
         enemies.push({
@@ -244,11 +368,12 @@ function generateStage() {
             width: 40,
             height: 60,
             type: pos.type,
-            health: 100,
-            maxHealth: 100,
-            velocityX: -1,
-            direction: -1,
-            attackCooldown: 0
+            health: pos.health,
+            maxHealth: pos.health,
+            velocityX: pos.velocityX,
+            direction: pos.direction,
+            attackCooldown: 0,
+            attackPower: pos.attackPower
         });
     });
     
@@ -268,4 +393,48 @@ function generateStage() {
     console.log(`스테이지 생성 완료! 플랫폼: ${platforms.length}, 적: ${enemies.length}, 코인: ${coins.length}`);
 }
 
-console.log('게임 객체 관리 시스템 로드 완료!'); 
+// 스테이지별 적 위치 및 능력치 생성
+function generateEnemyPositions() {
+    const groundLevel = canvas.height - 100;
+    const positions = [];
+    
+    // 기본 적들
+    const basicEnemies = [
+        {x: 500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 4000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 4500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5000, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15}
+    ];
+    
+    positions.push(...basicEnemies);
+    
+    // 스테이지별 특수 적 추가
+    if (currentStage >= 5) {
+        positions.push(
+            {x: 5500, y: groundLevel - 60, type: '나무왕', health: 150, velocityX: -0.8, direction: -1, attackPower: 25}
+        );
+    }
+    
+    if (currentStage >= 10) {
+        positions.push(
+            {x: 6000, y: groundLevel - 60, type: '포탑몬', health: 120, velocityX: 0, direction: 1, attackPower: 20}
+        );
+    }
+    
+    if (currentStage >= 15) {
+        positions.push(
+            {x: 6500, y: groundLevel - 60, type: '나무왕', health: 150, velocityX: -0.8, direction: -1, attackPower: 25},
+            {x: 7000, y: groundLevel - 60, type: '포탑몬', health: 120, velocityX: 0, direction: 1, attackPower: 20}
+        );
+    }
+    
+    return positions;
+}
+
+console.log('게임 객체 관리 시스템 (밸런스 개선 버전) 로드 완료!'); 

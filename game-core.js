@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 전체화면 기능 추가
+// 게임 핵심 로직 (game-core.js) - 밸런스 개선 버전
 // ========================================
 
 // 게임 상태 관리
@@ -267,6 +267,8 @@ function resetPlayer() {
     player.health = 300;
     player.attacking = false;
     player.attackCooldown = 0;
+    player.invincible = false;
+    player.invincibleTime = 0;
 }
 
 // 공격 함수
@@ -298,13 +300,27 @@ function attack() {
     console.log('공격!');
 }
 
-// 데미지 받기
+// 데미지 받기 (개선된 버전)
 function takeDamage(damage) {
+    // 무적 상태가 아닐 때만 데미지 받기
+    if (player.invincible) {
+        console.log('무적 상태로 데미지 무시!');
+        return;
+    }
+    
     player.health -= damage;
     if (player.health < 0) player.health = 0;
     
+    // 무적 상태 설정 (1초간)
+    player.invincible = true;
+    player.invincibleTime = 60; // 60프레임 = 1초
+    
     // 데미지 파티클 생성
     createParticle(player.x + player.width/2, player.y, '#FF0000');
+    
+    // 화면 흔들림 효과 (렌더링에서 처리)
+    
+    console.log(`데미지 받음: ${damage}, 남은 체력: ${player.health}`);
     
     // 체력이 0이 되면 생명 감소
     if (player.health <= 0) {
@@ -380,10 +396,15 @@ function showControlGuide() {
 - 우측 상단 ⛶ 버튼 클릭
 - 또는 F11 키 사용
 
-**게임 목표:**
+**게임 시스템:**
 - 적을 물리치고 코인을 모으세요!
-- 생명이 0이 되면 게임 오버
+- 스테이지 진행도가 100%가 되면 다음 스테이지로!
+- 체력이 0이 되면 생명이 감소합니다
+- 무적 시간 동안은 추가 데미지를 받지 않습니다
+
+**게임 목표:**
 - 높은 점수를 기록하세요!
+- 최대한 많은 스테이지를 클리어하세요!
     `;
     
     alert(guide);
@@ -409,4 +430,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (전체화면 기능 포함) 로드 완료!'); 
+console.log('게임 핵심 로직 (밸런스 개선 버전) 로드 완료!'); 

@@ -1,5 +1,5 @@
 // ========================================
-// 게임 렌더링 시스템 (game-render.js) - 개선된 버전
+// 게임 렌더링 시스템 (game-render.js) - 스테이지 시스템 개선 버전
 // ========================================
 
 // 게임 렌더링 함수
@@ -14,6 +14,8 @@ function renderGame() {
     renderEnemies();
     renderParticles();
     renderPlayer();
+    renderStageProgress();
+    renderStageCompleteMessage();
     renderPauseScreen();
 }
 
@@ -110,6 +112,10 @@ function renderEnemies() {
             // 적 몸체
             if (enemy.type === '나무돌이') {
                 ctx.fillStyle = '#228B22';
+            } else if (enemy.type === '나무왕') {
+                ctx.fillStyle = '#006400';
+            } else if (enemy.type === '포탑몬') {
+                ctx.fillStyle = '#8B0000';
             } else {
                 ctx.fillStyle = '#8B0000';
             }
@@ -255,6 +261,11 @@ function renderParticles() {
 function renderPlayer() {
     const x = player.x - cameraX;
     
+    // 무적 상태일 때 깜빡임 효과
+    if (player.invincible && Math.floor(player.invincibleTime / 5) % 2 === 0) {
+        ctx.globalAlpha = 0.5;
+    }
+    
     // 플레이어 그림자
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(x + 8, player.y + player.height + 8, player.width - 16, 15);
@@ -349,6 +360,83 @@ function renderPlayer() {
     ctx.strokeStyle = '#FFF';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, player.y - 20, healthBarWidth, healthBarHeight);
+    
+    // 무적 상태 표시
+    if (player.invincible) {
+        ctx.strokeStyle = '#00FFFF';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x - 2, player.y - 2, player.width + 4, player.height + 4);
+    }
+    
+    // 무적 시간 복원
+    ctx.globalAlpha = 1;
+}
+
+// 스테이지 진행도 렌더링
+function renderStageProgress() {
+    // 스테이지 진행도 바 (화면 상단 중앙)
+    const progressBarWidth = 400;
+    const progressBarHeight = 20;
+    const progressBarX = (canvas.width - progressBarWidth) / 2;
+    const progressBarY = 30;
+    
+    // 진행도 바 배경
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+    
+    // 진행도 바 테두리
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+    
+    // 진행도 바 (그라데이션)
+    const progressGradient = ctx.createLinearGradient(progressBarX, 0, progressBarX + progressBarWidth, 0);
+    progressGradient.addColorStop(0, '#00FF00');
+    progressGradient.addColorStop(0.5, '#FFFF00');
+    progressGradient.addColorStop(1, '#FF0000');
+    
+    ctx.fillStyle = progressGradient;
+    ctx.fillRect(progressBarX, progressBarY, progressBarWidth * (stageProgress / 100), progressBarHeight);
+    
+    // 진행도 텍스트
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`스테이지 ${currentStage} 진행도: ${Math.round(stageProgress)}%`, canvas.width / 2, progressBarY - 10);
+    
+    // 스테이지 정보
+    ctx.fillStyle = '#87CEEB';
+    ctx.font = '14px Arial';
+    ctx.fillText(`남은 적: ${enemies.length} | 남은 코인: ${coins.filter(c => !c.collected).length}`, canvas.width / 2, progressBarY + 35);
+    
+    ctx.textAlign = 'left';
+}
+
+// 스테이지 완료 메시지 렌더링
+function renderStageCompleteMessage() {
+    if (stageComplete) {
+        // 배경 오버레이
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 완료 메시지
+        ctx.fillStyle = '#00FF00';
+        ctx.font = 'bold 72px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`🎉 스테이지 ${currentStage} 완료! 🎉`, canvas.width / 2, canvas.height / 2 - 50);
+        
+        // 다음 스테이지 안내
+        ctx.fillStyle = '#87CEEB';
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText(`다음 스테이지로 이동 중...`, canvas.width / 2, canvas.height / 2 + 20);
+        
+        // 진행도 표시
+        ctx.fillStyle = '#FFD700';
+        ctx.font = '24px Arial';
+        ctx.fillText(`3초 후 자동으로 다음 스테이지로 이동합니다`, canvas.width / 2, canvas.height / 2 + 60);
+        
+        ctx.textAlign = 'left';
+    }
 }
 
 // 일시정지 화면 렌더링
@@ -400,4 +488,4 @@ function updateUI() {
     }
 }
 
-console.log('게임 렌더링 시스템 (개선된 버전) 로드 완료!'); 
+console.log('게임 렌더링 시스템 (스테이지 시스템 개선 버전) 로드 완료!'); 
