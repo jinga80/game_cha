@@ -460,21 +460,20 @@ body {
     background: rgba(255, 255, 255, 0.5);
 } 
 
-/* 모바일 컨트롤 */
+/* 마인크래프트 스타일 모바일 컨트롤 */
 .mobile-controls {
-    position: absolute;
-    bottom: -120px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    z-index: 100;
+    gap: 10px;
+    z-index: 1000;
 }
 
 .control-row {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     justify-content: center;
 }
 
@@ -482,46 +481,96 @@ body {
     width: 60px;
     height: 60px;
     border: none;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 1.5rem;
+    border-radius: 8px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.3);
-    touch-action: manipulation;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.control-btn:active,
-.control-btn:focus {
-    background: rgba(255, 255, 255, 0.4);
-    transform: scale(0.95);
+/* 이동 컨트롤 (WASD) */
+.move-up {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A);
+    color: white;
+}
+
+.move-left {
+    background: linear-gradient(45deg, #2196F3, #42A5F5);
+    color: white;
+}
+
+.move-down {
+    background: linear-gradient(45deg, #FF9800, #FFB74D);
+    color: white;
+}
+
+.move-right {
+    background: linear-gradient(45deg, #2196F3, #42A5F5);
+    color: white;
+}
+
+/* 액션 컨트롤 */
+.jump {
+    background: linear-gradient(45deg, #9C27B0, #BA68C8);
+    color: white;
+}
+
+.attack {
+    background: linear-gradient(45deg, #F44336, #EF5350);
+    color: white;
+}
+
+.skill {
+    background: linear-gradient(45deg, #FF5722, #FF8A65);
+    color: white;
+}
+
+.suck {
+    background: linear-gradient(45deg, #607D8B, #90A4AE);
+    color: white;
+}
+
+.run {
+    background: linear-gradient(45deg, #795548, #A1887F);
+    color: white;
+}
+
+.interact {
+    background: linear-gradient(45deg, #E91E63, #F06292);
+    color: white;
+}
+
+/* 버튼 호버 및 액티브 상태 */
+.control-btn:hover {
+    transform: scale(1.1);
     border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.left-btn, .right-btn {
-    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+.control-btn:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.jump-btn {
-    background: linear-gradient(45deg, #4ecdc4, #6ee7df);
-    width: 70px;
-    height: 70px;
-    font-size: 1.8rem;
-}
-
-.attack-btn {
-    background: linear-gradient(45deg, #ff4500, #ff6347);
-}
-
-.skill-btn {
-    background: linear-gradient(45deg, #ff69b4, #ff1493);
-}
-
-.suck-btn {
-    background: linear-gradient(45deg, #9370db, #8a2be2);
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+    }
+    
+    .mobile-controls {
+        bottom: 15px;
+        left: 15px;
+        gap: 8px;
+    }
+    
+    .control-row {
+        gap: 8px;
+    }
 } 
 
 /* 스테이지 선택 화면 */

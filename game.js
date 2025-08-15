@@ -47,7 +47,12 @@ const player = {
     // 체력 회복 관련 속성 추가
     healthRegenRate: 1, // 초당 회복량
     healthRegenCooldown: 0, // 회복 쿨다운
-    lastDamageTime: 0 // 마지막 데미지를 받은 시간
+    lastDamageTime: 0, // 마지막 데미지를 받은 시간
+    // 마인크래프트 스타일 컨트롤 관련 속성
+    running: false, // 달리기 상태
+    crouching: false, // 앉기 상태
+    inventory: [], // 인벤토리
+    selectedItem: 0 // 선택된 아이템 인덱스
 };
 
 // 게임 객체들
@@ -68,7 +73,7 @@ const MOVE_SPEED = 5;
 const STAGE_WIDTH = 3000;
 
 // 게임 버전 정보
-const GAME_VERSION = 'v1.01';
+const GAME_VERSION = 'v1.03';
 const GAME_RELEASE_DATE = '2025년 1월';
 const GAME_DEVELOPER = 'jinga80';
 
@@ -339,104 +344,174 @@ const characters = {
     }
 }; 
 
-// 모바일 컨트롤 설정
+// 마인크래프트 스타일 모바일 컨트롤 설정
 function setupMobileControls() {
-    // 이동 컨트롤
-    document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        player.velocityX = -MOVE_SPEED;
-        player.direction = -1;
-    });
-    document.getElementById('leftBtn').addEventListener('touchend', (e) => {
-        e.preventDefault();
-        if (player.velocityX < 0) player.velocityX = 0;
-    });
+    // 이동 컨트롤 (WASD 스타일)
+    const moveUpBtn = document.getElementById('moveUp');
+    const moveLeftBtn = document.getElementById('moveLeft');
+    const moveRightBtn = document.getElementById('moveRight');
+    const moveDownBtn = document.getElementById('moveDown');
     
-    document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        player.velocityX = MOVE_SPEED;
-        player.direction = 1;
-    });
-    document.getElementById('rightBtn').addEventListener('touchend', (e) => {
-        e.preventDefault();
-        if (player.velocityX > 0) player.velocityX = 0;
-    });
+    // 액션 컨트롤
+    const jumpBtn = document.getElementById('jump');
+    const attackBtn = document.getElementById('attack');
+    const skillBtn = document.getElementById('skill');
+    const suckBtn = document.getElementById('suck');
+    const runBtn = document.getElementById('run');
+    const interactBtn = document.getElementById('interact');
     
-    // 점프 컨트롤
-    document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        jump();
-    });
+    // 이동 컨트롤 이벤트
+    if (moveUpBtn) {
+        moveUpBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+    }
     
-    // 점프 버튼 터치 종료 시에도 점프 가능하도록 설정
-    document.getElementById('jumpBtn').addEventListener('touchend', (e) => {
-        e.preventDefault();
-        // 터치 종료 시에도 점프 상태를 확인하여 필요시 점프 실행
-    });
+    if (moveLeftBtn) {
+        moveLeftBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.velocityX = -MOVE_SPEED;
+            player.direction = -1;
+        });
+        moveLeftBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (player.velocityX < 0) {
+                player.velocityX = 0;
+            }
+        });
+    }
     
-    // 공격 컨트롤
-    document.getElementById('attackBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        attack();
-    });
+    if (moveRightBtn) {
+        moveRightBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.velocityX = MOVE_SPEED;
+            player.direction = 1;
+        });
+        moveRightBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (player.velocityX > 0) {
+                player.velocityX = 0;
+            }
+        });
+    }
     
-    // 스킬 컨트롤
-    document.getElementById('skillBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        useSkill();
-    });
+    if (moveDownBtn) {
+        moveDownBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            // 앉기 기능 (선택사항)
+        });
+    }
     
-    // 흡수 컨트롤
-    document.getElementById('suckBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        suckEnemy();
-    });
+    // 액션 컨트롤 이벤트
+    if (jumpBtn) {
+        jumpBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+    }
     
-    // 마우스 클릭도 지원
-    document.getElementById('leftBtn').addEventListener('click', () => {
-        player.velocityX = -MOVE_SPEED;
-        player.direction = -1;
-    });
-    document.getElementById('rightBtn').addEventListener('click', () => {
-        player.velocityX = MOVE_SPEED;
-        player.direction = 1;
-    });
-    document.getElementById('jumpBtn').addEventListener('click', jump);
-    document.getElementById('attackBtn').addEventListener('click', attack);
-    document.getElementById('skillBtn').addEventListener('click', useSkill);
-    document.getElementById('suckBtn').addEventListener('click', suckEnemy);
+    if (attackBtn) {
+        attackBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            attack();
+        });
+    }
+    
+    if (skillBtn) {
+        skillBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            useSkill();
+        });
+    }
+    
+    if (suckBtn) {
+        suckBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            suckEnemy();
+        });
+    }
+    
+    if (runBtn) {
+        runBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            player.running = true;
+        });
+        runBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            player.running = false;
+        });
+    }
+    
+    if (interactBtn) {
+        interactBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            useSkill();
+        });
+    }
 }
 
-// 키보드 컨트롤 설정
+// 마인크래프트 스타일 키보드 컨트롤 설정
 function setupKeyboardControls() {
     document.addEventListener('keydown', (e) => {
         if (!gameRunning || gamePaused) return;
         
         switch(e.code) {
-            case 'ArrowLeft':
-            case 'KeyA':
-                player.velocityX = -MOVE_SPEED;
-                player.direction = -1;
-                break;
-            case 'ArrowRight':
-            case 'KeyD':
-                player.velocityX = MOVE_SPEED;
-                player.direction = 1;
-                break;
-            case 'Space':
-            case 'ArrowUp':
-            case 'KeyW':
+            // 이동 컨트롤 (WASD)
+            case 'KeyW': // W키 - 점프
+            case 'Space': // 스페이스바 - 점프
                 e.preventDefault();
                 jump();
                 break;
-            case 'KeyJ':
-                attack();
+            case 'KeyA': // A키 - 왼쪽 이동
+                e.preventDefault();
+                player.velocityX = -MOVE_SPEED;
+                player.direction = -1;
                 break;
-            case 'KeyK':
+            case 'KeyS': // S키 - 앉기/내려가기
+                e.preventDefault();
+                // 앉기 기능 (선택사항)
+                break;
+            case 'KeyD': // D키 - 오른쪽 이동
+                e.preventDefault();
+                player.velocityX = MOVE_SPEED;
+                player.direction = 1;
+                break;
+            
+            // 액션 컨트롤
+            case 'KeyE': // E키 - 상호작용/아이템 사용
+                e.preventDefault();
                 useSkill();
                 break;
-            case 'KeyL':
+            case 'KeyQ': // Q키 - 아이템 버리기/적 흡수
+                e.preventDefault();
                 suckEnemy();
+                break;
+            case 'KeyF': // F키 - 공격
+                e.preventDefault();
+                attack();
+                break;
+            case 'KeyR': // R키 - 달리기 (이동 속도 증가)
+                e.preventDefault();
+                player.running = true;
+                break;
+            
+            // 기타 컨트롤
+            case 'KeyC': // C키 - 캐릭터 정보
+                e.preventDefault();
+                toggleCharacterInfo();
+                break;
+            case 'KeyI': // I키 - 인벤토리 (선택사항)
+                e.preventDefault();
+                toggleInventory();
+                break;
+            case 'KeyM': // M키 - 맵 (선택사항)
+                e.preventDefault();
+                toggleMap();
+                break;
+            case 'Escape': // ESC키 - 일시정지/메뉴
+                e.preventDefault();
+                togglePause();
                 break;
         }
     });
@@ -445,13 +520,18 @@ function setupKeyboardControls() {
         if (!gameRunning || gamePaused) return;
         
         switch(e.code) {
-            case 'ArrowLeft':
-            case 'KeyA':
-                if (player.velocityX < 0) player.velocityX = 0;
+            case 'KeyA': // A키 - 왼쪽 이동 중지
+                if (player.velocityX < 0) {
+                    player.velocityX = 0;
+                }
                 break;
-            case 'ArrowRight':
-            case 'KeyD':
-                if (player.velocityX > 0) player.velocityX = 0;
+            case 'KeyD': // D키 - 오른쪽 이동 중지
+                if (player.velocityX > 0) {
+                    player.velocityX = 0;
+                }
+                break;
+            case 'KeyR': // R키 - 달리기 중지
+                player.running = false;
                 break;
         }
     });
@@ -987,60 +1067,56 @@ function createIceStorm() {
 
 // 게임 업데이트 함수들
 function updatePlayer() {
-    if (gamePaused) return;
-    
     // 중력 적용
     player.velocityY += GRAVITY;
-    player.y += player.velocityY;
+    
+    // 달리기 상태에 따른 이동 속도 계산
+    let currentMoveSpeed = MOVE_SPEED;
+    if (player.running) {
+        currentMoveSpeed = MOVE_SPEED * 1.5; // 달리기 시 1.5배 속도
+    }
     
     // 플레이어 이동
     player.x += player.velocityX;
+    player.y += player.velocityY;
     
     // 경계 체크
     if (player.x < 0) player.x = 0;
     if (player.x > STAGE_WIDTH - player.width) player.x = STAGE_WIDTH - player.width;
     
-    // 바닥 충돌 체크
-    player.onGround = false;
-    for (let platform of platforms) {
+    // 플랫폼 충돌 검사
+    let onGround = false;
+    platforms.forEach(platform => {
         if (player.x < platform.x + platform.width &&
             player.x + player.width > platform.x &&
-            player.y + player.height >= platform.y &&
-            player.y + player.height <= platform.y + platform.height + 5 &&
-            player.velocityY > 0) {
+            player.y + player.height > platform.y &&
+            player.y < platform.y + platform.height) {
             
-            player.y = platform.y - player.height;
-            player.velocityY = 0;
-            player.jumping = false;
-            player.onGround = true;
-            player.jumpCount = 0; // 바닥에 있을 때 점프 횟수 초기화
-            break;
+            if (player.velocityY > 0) {
+                player.y = platform.y - player.height;
+                player.velocityY = 0;
+                onGround = true;
+                player.jumpCount = 0; // 착지 시 점프 횟수 초기화
+                player.doubleJumpAvailable = true;
+            }
         }
-    }
+    });
     
-    // 공중에서 떨어질 때 점프 상태 업데이트
-    if (player.velocityY > 0 && !player.onGround) {
-        player.jumping = true;
-    }
-    
-    // 2단 점프 상태 업데이트
-    if (player.onGround) {
-        player.doubleJumpAvailable = true;
-    }
-    
-    // 게임 오버 체크
-    if (player.y > canvas.height) {
-        loseLife();
-    }
+    player.onGround = onGround;
     
     // 스킬 쿨다운 감소
     if (player.skillCooldown > 0) {
         player.skillCooldown--;
     }
     
-    // 디버깅 정보 (개발 중에만 사용)
+    // 2단 점프 가능 여부 관리
     if (player.onGround) {
-        console.log('플레이어 상태: 바닥에 있음, 점프 가능:', !player.jumping, '이동속도:', player.velocityX, '점프 횟수:', player.jumpCount);
+        player.doubleJumpAvailable = true;
+    }
+    
+    // 점프 상태 관리
+    if (player.velocityY > 0) {
+        player.jumping = true;
     }
 }
 
@@ -2791,4 +2867,51 @@ function ensureDOMElements() {
         return false;
     }
     return true;
+}
+
+// 캐릭터 정보 토글
+function toggleCharacterInfo() {
+    console.log('캐릭터 정보 토글');
+    // 캐릭터 정보 표시/숨김 로직 (선택사항)
+}
+
+// 인벤토리 토글
+function toggleInventory() {
+    console.log('인벤토리 토글');
+    // 인벤토리 표시/숨김 로직 (선택사항)
+}
+
+// 맵 토글
+function toggleMap() {
+    console.log('맵 토글');
+    // 맵 표시/숨김 로직 (선택사항)
+}
+
+// 컨트롤 가이드 표시
+function showControlGuide() {
+    const controlGuide = `
+🎮 **마인크래프트 스타일 컨트롤 가이드**
+
+**이동 컨트롤:**
+- W / ↑ / 스페이스바: 점프
+- A / ←: 왼쪽 이동
+- S / ↓: 앉기 (선택사항)
+- D / →: 오른쪽 이동
+- R: 달리기 (이동 속도 1.5배)
+
+**액션 컨트롤:**
+- F: 공격
+- E: 스킬 사용
+- Q: 적 흡수
+- C: 캐릭터 정보
+- I: 인벤토리 (선택사항)
+- M: 맵 (선택사항)
+
+**기타:**
+- ESC: 일시정지/메뉴
+- 마우스: 시점 조작 (선택사항)
+    `;
+    
+    console.log(controlGuide);
+    alert(controlGuide);
 }

@@ -34,16 +34,29 @@
             <canvas id="gameCanvas" width="800" height="400"></canvas>
             
             <!-- 모바일 컨트롤 -->
-            <div class="mobile-controls" id="mobileControls">
+            <div class="mobile-controls" id="mobileControls" style="display: none;">
+                <!-- 이동 컨트롤 (WASD 스타일) -->
                 <div class="control-row">
-                    <button class="control-btn left-btn" id="leftBtn">←</button>
-                    <button class="control-btn jump-btn" id="jumpBtn">↑</button>
-                    <button class="control-btn right-btn" id="rightBtn">→</button>
+                    <button class="control-btn move-up" id="moveUp">W</button>
                 </div>
                 <div class="control-row">
-                    <button class="control-btn attack-btn" id="attackBtn">⚔️</button>
-                    <button class="control-btn skill-btn" id="skillBtn">🔥</button>
-                    <button class="control-btn suck-btn" id="suckBtn">💨</button>
+                    <button class="control-btn move-left" id="moveLeft">A</button>
+                    <button class="control-btn move-down" id="moveDown">S</button>
+                    <button class="control-btn move-right" id="moveRight">D</button>
+                </div>
+                
+                <!-- 액션 컨트롤 -->
+                <div class="control-row">
+                    <button class="control-btn jump" id="jump">점프</button>
+                    <button class="control-btn attack" id="attack">공격</button>
+                </div>
+                <div class="control-row">
+                    <button class="control-btn skill" id="skill">스킬</button>
+                    <button class="control-btn suck" id="suck">흡수</button>
+                </div>
+                <div class="control-row">
+                    <button class="control-btn run" id="run">달리기</button>
+                    <button class="control-btn interact" id="interact">상호작용</button>
                 </div>
             </div>
         </div>
@@ -70,16 +83,18 @@
                 <h2>재미있는게임에 오신 것을 환영합니다!</h2>
                 <p>커비 스타일의 플랫폼 어드벤처를 즐겨보세요</p>
                 <div class="version-info">
-                    <p class="version-text">v1.01</p>
+                    <p class="version-text">v1.03</p>
                     <p class="developer-text">개발자: jinga80</p>
                 </div>
                 <div class="button-group">
                     <button class="btn-primary" onclick="showCharacterSelect()">게임 시작</button>
+                    <button class="btn-secondary" onclick="showControlGuide()">컨트롤 가이드</button>
                     <div class="game-info">
-                        <p>🎮 조작법: 화면 버튼으로 이동, 점프, 공격, 스킬</p>
+                        <p>🎮 조작법: WASD로 이동, 스페이스바로 점프, F로 공격</p>
                         <p>📱 모바일 최적화 완료!</p>
                         <p>⚔️ 적을 흡수하고 능력을 얻어보세요!</p>
-                        <p>🆕 새로운 기능: 2단 점프, 체력 회복, 스테이지 선택!</p>
+                        <p>🆕 새로운 기능: 3D 시각 효과, 밤낮 시스템!</p>
+                        <p>🏃‍♂️ R키로 달리기 가능!</p>
                     </div>
                 </div>
             </div>
