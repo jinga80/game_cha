@@ -15,351 +15,255 @@
             overflow: hidden;
             user-select: none;
         }
-        
+
         #gameCanvas {
             display: block;
             margin: 0 auto;
-            border: 2px solid #333;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border: 3px solid #333;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            max-width: 95vw;
+            max-height: 95vh;
         }
-        
+
         .game-container {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 20px;
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: white;
+            font-size: 20px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-ui h2 {
+            margin: 0 0 15px 0;
+            color: #FFD700;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .ui-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .ui-label {
+            font-weight: bold;
+            color: #87CEEB;
+            min-width: 80px;
+        }
+
+        .ui-value {
+            color: #FFF;
+            font-weight: bold;
+        }
+
+        .health-bar {
+            width: 350px;
+            height: 30px;
+            background: #333;
+            border: 3px solid #FFF;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00FF00, #FFFF00, #FF0000);
+            transition: width 0.3s ease;
+            border-radius: 5px;
+        }
+
+        .lives {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .heart {
+            width: 30px;
+            height: 30px;
+            background: #FF69B4;
+            clip-path: path('M12,21.35l-1.45-1.32C5.4,15.36,2,12.28,2,8.5C2,5.42,4.42,3,7.5,3c1.74,0,3.41,0.81,4.5,2.09C13.09,3.81,14.76,3,16.5,3C19.58,3,22,5.42,22,8.5c0,3.78-3.4,6.86-8.55,11.54L12,21.35z');
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            min-width: 500px;
+        }
+
+        .start-screen h1 {
+            font-size: 56px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        .start-screen p {
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: #87CEEB;
+        }
+
+        .start-screen .developer {
+            font-size: 22px;
+            margin-bottom: 35px;
+            color: #FF69B4;
+        }
+
+        .game-button {
+            font-size: 26px;
+            padding: 18px 35px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #FF6B6B;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            min-width: 500px;
+        }
+
+        .game-over-screen h1 {
+            font-size: 56px;
+            color: #FF6B6B;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        .game-over-screen p {
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: #87CEEB;
+        }
+
+        .restart-button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .version-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid #FFD700;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <header class="game-header">
-            <h1>재미있는게임</h1>
-            <p class="developer">개발자: 진건우</p>
-        </header>
+        <canvas id="gameCanvas" width="1920" height="1080"></canvas>
         
+        <!-- 버전 정보 -->
+        <div class="version-info">v1.05</div>
+        
+        <!-- 게임 UI -->
         <div class="game-ui">
-            <div class="score-board">
-                <div class="score-item">
-                    <span class="score-label">점수</span>
-                    <span class="score-value" id="score">0</span>
-                </div>
-                <div class="score-item">
-                    <span class="score-label">생명</span>
-                    <span class="score-value" id="lives">5</span>
-                </div>
-                <div class="score-item">
-                    <span class="score-label">스테이지</span>
-                    <span class="score-value" id="stage">1</span>
-                </div>
+            <h2>🎮 재미있는게임</h2>
+            <div class="ui-row">
+                <span class="ui-label">스테이지:</span>
+                <span class="ui-value" id="stageDisplay">1</span>
+            </div>
+            <div class="ui-row">
+                <span class="ui-label">점수:</span>
+                <span class="ui-value" id="scoreDisplay">0</span>
+            </div>
+            <div class="ui-row">
+                <span class="ui-label">생명:</span>
+                <span class="ui-value" id="livesDisplay">5</span>
+            </div>
+            <div class="lives" id="heartsContainer"></div>
+            <div class="ui-row">
+                <span class="ui-label">체력:</span>
+                <span class="ui-value" id="healthDisplay">300</span>/300
+            </div>
+            <div class="health-bar">
+                <div class="health-fill" id="healthFill" style="width: 100%"></div>
             </div>
         </div>
-        
-        <div class="game-area">
-            <canvas id="gameCanvas" width="1920" height="1080"></canvas>
-            
-            <!-- 모바일 컨트롤 -->
-            <div class="mobile-controls" id="mobileControls" style="display: none;">
-                <!-- 이동 컨트롤 (WASD 스타일) -->
-                <div class="control-row">
-                    <button class="control-btn move-up" id="moveUp">W</button>
-                </div>
-                <div class="control-row">
-                    <button class="control-btn move-left" id="moveLeft">A</button>
-                    <button class="control-btn move-down" id="moveDown">S</button>
-                    <button class="control-btn move-right" id="moveRight">D</button>
-                </div>
-                
-                <!-- 액션 컨트롤 -->
-                <div class="control-row">
-                    <button class="control-btn jump" id="jump">점프</button>
-                    <button class="control-btn attack" id="attack">공격</button>
-                </div>
-                <div class="control-row">
-                    <button class="control-btn skill" id="skill">스킬</button>
-                    <button class="control-btn suck" id="suck">흡수</button>
-                </div>
-                <div class="control-row">
-                    <button class="control-btn run" id="run">달리기</button>
-                    <button class="control-btn interact" id="interact">상호작용</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 게임 오버 화면 -->
-        <div class="game-over" id="gameOver" style="display: none;">
-            <div class="modal-content">
-                <h2>게임 오버!</h2>
-                <div class="final-stats">
-                    <p>최종 점수: <span id="finalScore">0</span></p>
-                    <p>달성한 스테이지: <span id="finalStage">1</span></p>
-                    <p>최고 기록: <span id="highScore">0</span></p>
-                </div>
-                <div class="button-group">
-                    <button class="btn-primary" onclick="restartGame()">다시 시작</button>
-                    <button class="btn-secondary" onclick="showCharacterSelect()">캐릭터 변경</button>
-                </div>
-            </div>
-        </div>
-        
+
         <!-- 시작 화면 -->
-        <div class="start-screen" id="startScreen">
-            <div class="modal-content">
-                <h2>재미있는게임에 오신 것을 환영합니다!</h2>
-                <p>커비 스타일의 플랫폼 어드벤처를 즐겨보세요</p>
-                <div class="version-info">
-                    <p class="version-text">v1.03</p>
-                    <p class="developer-text">개발자: jinga80</p>
-                </div>
-                <div class="button-group">
-                    <button class="btn-primary" onclick="showCharacterSelect()">게임 시작</button>
-                    <button class="btn-secondary" onclick="showControlGuide()">컨트롤 가이드</button>
-                    <div class="game-info">
-                        <p>🎮 조작법: WASD로 이동, 스페이스바로 점프, F로 공격</p>
-                        <p>📱 모바일 최적화 완료!</p>
-                        <p>⚔️ 적을 흡수하고 능력을 얻어보세요!</p>
-                        <p>🆕 새로운 기능: 3D 시각 효과, 밤낮 시스템!</p>
-                        <p>🏃‍♂️ R키로 달리기 가능!</p>
-                    </div>
-                </div>
-            </div>
+        <div id="startScreen" class="start-screen">
+            <h1>🎮 재미있는게임</h1>
+            <p>커비 스타일 100스테이지 행성 어드벤처</p>
+            <p class="developer">개발자: 진건우</p>
+            <button id="startButton" class="game-button">🚀 게임 시작</button>
+            <button id="controlGuideButton" class="game-button control-button">📖 컨트롤 가이드</button>
         </div>
-        
-        <!-- 캐릭터 선택 화면 -->
-        <div class="character-select" id="characterSelect" style="display: none;">
-            <div class="modal-content">
-                <h2>캐릭터를 선택하세요!</h2>
-                <div class="character-grid">
-                    <div class="character-option" onclick="selectCharacter('검사')">
-                        <div class="character-preview">
-                            <div class="character-sprite blue-char" id="char-검사"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>검사</h3>
-                            <p>HP: 120 | CP: 35</p>
-                            <p class="char-ability">검술마스터</p>
-                            <p class="char-desc">강력한 검술로 적을 물리치는 전사</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('궁수')">
-                        <div class="character-preview">
-                            <div class="character-sprite red-char" id="char-궁수"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>궁수</h3>
-                            <p>HP: 100 | CP: 45</p>
-                            <p class="char-ability">정밀사격</p>
-                            <p class="char-desc">정확한 화살로 적을 제거하는 궁수</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('망치전문가')">
-                        <div class="character-preview">
-                            <div class="character-sprite brown-char" id="char-망치전문가"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>망치전문가</h3>
-                            <p>HP: 150 | CP: 50</p>
-                            <p class="char-ability">파괴의달인</p>
-                            <p class="char-desc">거대한 망치로 모든 것을 부수는 힘의 소유자</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('폭탄전문가')">
-                        <div class="character-preview">
-                            <div class="character-sprite orange-char" id="char-폭탄전문가"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>폭탄전문가</h3>
-                            <p>HP: 110 | CP: 60</p>
-                            <p class="char-ability">폭발전문가</p>
-                            <p class="char-desc">폭발적인 위력으로 적을 제거하는 전문가</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('미사일발사달인')">
-                        <div class="character-preview">
-                            <div class="character-sprite tomato-char" id="char-미사일발사달인"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>미사일발사달인</h3>
-                            <p>HP: 90 | CP: 70</p>
-                            <p class="char-ability">정밀타격</p>
-                            <p class="char-desc">정밀한 미사일로 원거리 적을 제거</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('풍선')">
-                        <div class="character-preview">
-                            <div class="character-sprite pink-char" id="char-풍선"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>풍선</h3>
-                            <p>HP: 80 | CP: 30</p>
-                            <p class="char-ability">가벼운몸</p>
-                            <p class="char-desc">가벼운 몸으로 높이 점프하는 특수 캐릭터</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('왕')">
-                        <div class="character-preview">
-                            <div class="character-sprite gold-char" id="char-왕"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>왕</h3>
-                            <p>HP: 200 | CP: 80</p>
-                            <p class="char-ability">왕의권위</p>
-                            <p class="char-desc">왕의 권위로 모든 적을 압도하는 지배자</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('스피어맨')">
-                        <div class="character-preview">
-                            <div class="character-sprite green-char" id="char-스피어맨"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>스피어맨</h3>
-                            <p>HP: 130 | CP: 55</p>
-                            <p class="char-ability">창술달인</p>
-                            <p class="char-desc">긴 창으로 적을 찌르는 창술의 달인</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('어둠의마법사')">
-                        <div class="character-preview">
-                            <div class="character-sprite purple-char" id="char-어둠의마법사"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>어둠의마법사</h3>
-                            <p>HP: 140 | CP: 100</p>
-                            <p class="char-ability">어둠의힘</p>
-                            <p class="char-desc">어둠의 힘으로 적을 소멸시키는 마법사</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('마법사')">
-                        <div class="character-preview">
-                            <div class="character-sprite violet-char" id="char-마법사"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>마법사</h3>
-                            <p>HP: 160 | CP: 90</p>
-                            <p class="char-ability">마법전문가</p>
-                            <p class="char-desc">강력한 마법으로 적을 제거하는 현자</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('발키리')">
-                        <div class="character-preview">
-                            <div class="character-sprite deep-pink-char" id="char-발키리"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>발키리</h3>
-                            <p>HP: 180 | CP: 75</p>
-                            <p class="char-ability">신의힘</p>
-                            <p class="char-desc">신의 힘을 받은 전사, 날개로 하늘을 날아다님</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('방패맨')">
-                        <div class="character-preview">
-                            <div class="character-sprite sienna-char" id="char-방패맨"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>방패맨</h3>
-                            <p>HP: 200 | CP: 40</p>
-                            <p class="char-ability">철벽방어</p>
-                            <p class="char-desc">강력한 방패로 모든 공격을 막아내는 방어의 달인</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('거인')">
-                        <div class="character-preview">
-                            <div class="character-sprite dim-gray-char" id="char-거인"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>거인</h3>
-                            <p>HP: 250 | CP: 60</p>
-                            <p class="char-ability">거대한힘</p>
-                            <p class="char-desc">거대한 몸집으로 모든 것을 압도하는 거인</p>
-                        </div>
-                    </div>
-                    <div class="character-option" onclick="selectCharacter('미사일')">
-                        <div class="character-preview">
-                            <div class="character-sprite red-char" id="char-미사일"></div>
-                        </div>
-                        <div class="character-info">
-                            <h3>미사일</h3>
-                            <p>HP: 60 | CP: 85</p>
-                            <p class="char-ability">초고속</p>
-                            <p class="char-desc">초고속으로 적을 관통하는 미사일 캐릭터</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="btn-secondary" onclick="showStageSelect()">스테이지 선택</button>
-                    <button class="btn-secondary" onclick="goBack()">뒤로 가기</button>
-                </div>
-            </div>
+
+        <!-- 게임 오버 화면 -->
+        <div id="gameOverScreen" class="game-over-screen" style="display: none;">
+            <h1>💀 게임 오버</h1>
+            <p>최종 점수: <span id="finalScore">0</span></p>
+            <p>달성 스테이지: <span id="finalStage">1</span></p>
+            <button id="restartButton" class="game-button restart-button">🔄 다시 시작</button>
         </div>
-        
-        <!-- 스테이지 선택 화면 -->
-        <div class="stage-select" id="stageSelect" style="display: none;">
-            <div class="modal-content">
-                <h2>스테이지를 선택하세요!</h2>
-                <div class="stage-info">
-                    <p>현재 선택된 캐릭터: <span id="selectedCharName">검사</span></p>
-                    <p>총 100개 스테이지가 있습니다!</p>
-                </div>
-                <div class="stage-grid">
-                    <div class="planet-section">
-                        <h3>🌳 나무행성 (1-20)</h3>
-                        <div class="stage-buttons">
-                            <button class="stage-btn" onclick="selectStage(1)">1</button>
-                            <button class="stage-btn" onclick="selectStage(5)">5</button>
-                            <button class="stage-btn" onclick="selectStage(10)">10</button>
-                            <button class="stage-btn" onclick="selectStage(15)">15</button>
-                            <button class="stage-btn" onclick="selectStage(20)">20</button>
-                        </div>
-                    </div>
-                    <div class="planet-section">
-                        <h3>🔥 불꽃행성 (21-40)</h3>
-                        <div class="stage-buttons">
-                            <button class="stage-btn" onclick="selectStage(25)">25</button>
-                            <button class="stage-btn" onclick="selectStage(30)">30</button>
-                            <button class="stage-btn" onclick="selectStage(35)">35</button>
-                            <button class="stage-btn" onclick="selectStage(40)">40</button>
-                        </div>
-                    </div>
-                    <div class="planet-section">
-                        <h3>⚡ 번개행성 (41-60)</h3>
-                        <div class="stage-buttons">
-                            <button class="stage-btn" onclick="selectStage(45)">45</button>
-                            <button class="stage-btn" onclick="selectStage(50)">50</button>
-                            <button class="stage-btn" onclick="selectStage(55)">55</button>
-                            <button class="stage-btn" onclick="selectStage(60)">60</button>
-                        </div>
-                    </div>
-                    <div class="planet-section">
-                        <h3>🌈 원소행성 (61-80)</h3>
-                        <div class="stage-buttons">
-                            <button class="stage-btn" onclick="selectStage(65)">65</button>
-                            <button class="stage-btn" onclick="selectStage(70)">70</button>
-                            <button class="stage-btn" onclick="selectStage(75)">75</button>
-                            <button class="stage-btn" onclick="selectStage(80)">80</button>
-                        </div>
-                    </div>
-                    <div class="planet-section">
-                        <h3>❄️ 얼음행성 (81-100)</h3>
-                        <div class="stage-buttons">
-                            <button class="stage-btn" onclick="selectStage(85)">85</button>
-                            <button class="stage-btn" onclick="selectStage(90)">90</button>
-                            <button class="stage-btn" onclick="selectStage(95)">95</button>
-                            <button class="stage-btn" onclick="selectStage(100)">100</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="button-group">
-                    <button class="btn-secondary" onclick="goBackToCharacterSelect()">캐릭터 선택으로</button>
-                    <button class="btn-secondary" onclick="goBack()">뒤로 가기</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 일시정지 버튼 -->
-        <button class="pause-btn" id="pauseBtn" onclick="togglePause()">⏸️</button>
     </div>
-    
+
+    <!-- 게임 스크립트들 -->
+    <script src="game-core.js"></script>
+    <script src="game-objects.js"></script>
+    <script src="game-render.js"></script>
     <script src="game.js"></script>
 </body>
 </html> 
