@@ -1,5 +1,5 @@
 // ========================================
-// 게임 렌더링 시스템 (game-render.js) - 스테이지 시스템 개선 버전
+// 게임 렌더링 시스템 (game-render.js) - 발사체 및 폭발 효과 추가 버전
 // ========================================
 
 // 게임 렌더링 함수
@@ -12,6 +12,8 @@ function renderGame() {
     renderPlatforms();
     renderCoins();
     renderEnemies();
+    renderProjectiles();
+    renderExplosions();
     renderParticles();
     renderPlayer();
     renderStageProgress();
@@ -100,7 +102,7 @@ function renderPlatforms() {
     });
 }
 
-// 적 렌더링
+// 적 렌더링 (AI 상태 표시 추가)
 function renderEnemies() {
     enemies.forEach(enemy => {
         const x = enemy.x - cameraX;
@@ -109,16 +111,19 @@ function renderEnemies() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(x + 8, enemy.y + enemy.height + 8, enemy.width - 16, 15);
             
-            // 적 몸체
+            // 적 몸체 (AI 상태에 따른 색상 변화)
+            let bodyColor;
             if (enemy.type === '나무돌이') {
-                ctx.fillStyle = '#228B22';
+                bodyColor = enemy.state === 'chase' ? '#FF4500' : '#228B22';
             } else if (enemy.type === '나무왕') {
-                ctx.fillStyle = '#006400';
+                bodyColor = enemy.state === 'chase' ? '#8B0000' : '#006400';
             } else if (enemy.type === '포탑몬') {
-                ctx.fillStyle = '#8B0000';
+                bodyColor = enemy.state === 'chase' ? '#FF0000' : '#8B0000';
             } else {
-                ctx.fillStyle = '#8B0000';
+                bodyColor = enemy.state === 'chase' ? '#FF0000' : '#8B0000';
             }
+            
+            ctx.fillStyle = bodyColor;
             ctx.fillRect(x, enemy.y, enemy.width, enemy.height);
             
             // 적 테두리
@@ -150,6 +155,25 @@ function renderEnemies() {
                 ctx.fillRect(x + 4, enemy.y + 35, 4, 4);
             }
             
+            // AI 상태 표시 (적 위에)
+            let stateColor, stateText;
+            if (enemy.state === 'chase') {
+                stateColor = '#FF0000';
+                stateText = '⚡';
+            } else if (enemy.state === 'alert') {
+                stateColor = '#FFD700';
+                stateText = '⚠️';
+            } else {
+                stateColor = '#00FF00';
+                stateText = '🔄';
+            }
+            
+            ctx.fillStyle = stateColor;
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(stateText, x + enemy.width/2, enemy.y - 5);
+            ctx.textAlign = 'left';
+            
             // 체력바 (더 크게)
             const healthRatio = enemy.health / enemy.maxHealth;
             const healthBarWidth = enemy.width;
@@ -174,6 +198,20 @@ function renderEnemies() {
             ctx.lineWidth = 2;
             ctx.strokeRect(x, enemy.y - 15, healthBarWidth, healthBarHeight);
         }
+    });
+}
+
+// 발사체 렌더링
+function renderProjectiles() {
+    player.projectiles.forEach(projectile => {
+        projectile.render(ctx);
+    });
+}
+
+// 폭발 효과 렌더링
+function renderExplosions() {
+    explosions.forEach(explosion => {
+        explosion.render(ctx);
     });
 }
 
@@ -230,24 +268,24 @@ function renderParticles() {
         const x = particle.x - cameraX;
         if (x > 0 && x < canvas.width) {
             ctx.fillStyle = particle.color;
-            ctx.globalAlpha = particle.life / 30;
+            ctx.globalAlpha = particle.life / 50;
             
             // 파티클 크기 변화
-            const size = 4 + (30 - particle.life) / 8;
+            const size = particle.size || 4;
             ctx.beginPath();
             ctx.arc(x, particle.y, size, 0, Math.PI * 2);
             ctx.fill();
             
             // 파티클 꼬리 효과
             if (particle.life > 20) {
-                ctx.globalAlpha = (particle.life - 20) / 10 * 0.6;
+                ctx.globalAlpha = (particle.life - 20) / 30 * 0.6;
                 ctx.beginPath();
                 ctx.arc(x - particle.velocityX * 3, particle.y - particle.velocityY * 3, size * 0.6, 0, Math.PI * 2);
                 ctx.fill();
             }
             
             // 파티클 하이라이트
-            ctx.globalAlpha = particle.life / 30 * 0.8;
+            ctx.globalAlpha = particle.life / 50 * 0.8;
             ctx.fillStyle = '#FFF';
             ctx.beginPath();
             ctx.arc(x - 1, particle.y - 1, size * 0.3, 0, Math.PI * 2);
@@ -290,7 +328,7 @@ function renderPlayer() {
         ctx.fillRect(x + 38, player.y + 33, 10, 10);
     } else {
         ctx.fillRect(x + 2, player.y + 18, 10, 10);
-        ctx.fillRect(x + 2, player.y + 33, 10, 10);
+        ctx.fillRect(x + 2, player.y + 35, 10, 10);
     }
     
     // 플레이어 동공
@@ -313,27 +351,18 @@ function renderPlayer() {
     
     // 공격 상태 표시
     if (player.attacking) {
-        ctx.fillStyle = '#FFD700';
-        ctx.fillRect(x + (player.direction > 0 ? player.width : -25), player.y + 12, 25, 35);
-        
-        // 공격 이펙트
-        ctx.strokeStyle = '#FF4500';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(x + (player.direction > 0 ? player.width + 12 : -12), player.y + 18);
-        ctx.lineTo(x + (player.direction > 0 ? player.width + 25 : -25), player.y + 28);
-        ctx.stroke();
-        
-        // 공격 파티클
+        // 공격 방향 표시
         ctx.fillStyle = '#FFD700';
         ctx.globalAlpha = 0.8;
-        for (let i = 0; i < 5; i++) {
-            const px = x + (player.direction > 0 ? player.width + 15 : -15) + (Math.random() - 0.5) * 20;
-            const py = player.y + 20 + Math.random() * 20;
-            ctx.beginPath();
-            ctx.arc(px, py, 3, 0, Math.PI * 2);
-            ctx.fill();
+        
+        if (player.direction > 0) {
+            // 오른쪽 공격
+            ctx.fillRect(x + player.width, player.y + 10, 30, 30);
+        } else {
+            // 왼쪽 공격
+            ctx.fillRect(x - 30, player.y + 10, 30, 30);
         }
+        
         ctx.globalAlpha = 1;
     }
     
@@ -488,4 +517,4 @@ function updateUI() {
     }
 }
 
-console.log('게임 렌더링 시스템 (스테이지 시스템 개선 버전) 로드 완료!'); 
+console.log('게임 렌더링 시스템 (발사체 및 폭발 효과 추가 버전) 로드 완료!'); 

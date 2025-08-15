@@ -1,5 +1,5 @@
 // ========================================
-// 게임 객체 관리 (game-objects.js) - 밸런스 개선 버전
+// 게임 객체 관리 (game-objects.js) - 공격 시스템 및 AI 개선 버전
 // ========================================
 
 // 플레이어 객체
@@ -18,7 +18,8 @@ const player = {
     attacking: false,
     attackCooldown: 0,
     invincible: false, // 무적 상태
-    invincibleTime: 0 // 무적 시간
+    invincibleTime: 0, // 무적 시간
+    projectiles: [] // 발사체 배열
 };
 
 // 게임 객체들
@@ -32,6 +33,123 @@ let cameraX = 0;
 let stageProgress = 0; // 스테이지 진행도 (0-100)
 let stageComplete = false; // 스테이지 완료 여부
 let stageTimer = 0; // 스테이지 타이머
+
+// 발사체 클래스
+class Projectile {
+    constructor(x, y, direction, type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.width = 15;
+        this.height = 15;
+        this.velocityX = direction * 12; // 발사 속도
+        this.velocityY = 0;
+        this.direction = direction;
+        this.type = type;
+        this.life = 60; // 1초 후 사라짐
+        this.exploded = false;
+    }
+    
+    update() {
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+        this.life--;
+        
+        // 화면 밖으로 나가면 제거
+        if (this.x < cameraX - 100 || this.x > cameraX + canvas.width + 100) {
+            this.life = 0;
+        }
+    }
+    
+    render(ctx) {
+        if (this.exploded) return;
+        
+        const x = this.x - cameraX;
+        if (x < 0 || x > canvas.width) return;
+        
+        // 발사체 몸체
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 발사체 테두리
+        ctx.strokeStyle = '#FF4500';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 발사체 꼬리 효과
+        ctx.fillStyle = '#FF4500';
+        ctx.beginPath();
+        ctx.arc(x + this.width/2 - this.direction * 8, this.y + this.height/2, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// 폭발 효과 클래스
+class Explosion {
+    constructor(x, y, size = 50) {
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        this.particles = [];
+        this.life = 30;
+        
+        // 폭발 파티클 생성
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                x: x + (Math.random() - 0.5) * size,
+                y: y + (Math.random() - 0.5) * size,
+                velocityX: (Math.random() - 0.5) * 8,
+                velocityY: (Math.random() - 0.5) * 8,
+                color: ['#FF4500', '#FFD700', '#FF6347', '#FF8C00'][Math.floor(Math.random() * 4)],
+                life: 30 + Math.random() * 20
+            });
+        }
+    }
+    
+    update() {
+        this.life--;
+        this.particles.forEach(particle => {
+            particle.x += particle.velocityX;
+            particle.y += particle.velocityY;
+            particle.velocityX *= 0.95; // 마찰력
+            particle.velocityY *= 0.95;
+            particle.life--;
+        });
+        
+        // 죽은 파티클 제거
+        this.particles = this.particles.filter(p => p.life > 0);
+    }
+    
+    render(ctx) {
+        if (this.life <= 0) return;
+        
+        const x = this.x - cameraX;
+        if (x < 0 || x > canvas.width) return;
+        
+        // 폭발 중심
+        ctx.fillStyle = `rgba(255, 69, 0, ${this.life / 30})`;
+        ctx.beginPath();
+        ctx.arc(x, this.y, this.size * (1 - this.life / 30), 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 폭발 파티클들
+        this.particles.forEach(particle => {
+            const px = particle.x - cameraX;
+            if (px > 0 && px < canvas.width) {
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life / 50;
+                ctx.beginPath();
+                ctx.arc(px, particle.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+        ctx.globalAlpha = 1;
+    }
+}
+
+// 폭발 효과 배열
+let explosions = [];
 
 // 플레이어 업데이트
 function updatePlayer() {
@@ -110,6 +228,12 @@ function updatePlayer() {
         }
     }
     
+    // 발사체 업데이트
+    updateProjectiles();
+    
+    // 폭발 효과 업데이트
+    updateExplosions();
+    
     // 카메라 따라가기
     cameraX = player.x - canvas.width / 2;
     if (cameraX < 0) cameraX = 0;
@@ -119,16 +243,114 @@ function updatePlayer() {
     updateStageProgress();
 }
 
-// 적 업데이트
+// 발사체 업데이트
+function updateProjectiles() {
+    for (let i = player.projectiles.length - 1; i >= 0; i--) {
+        const projectile = player.projectiles[i];
+        projectile.update();
+        
+        // 적과의 충돌 체크
+        enemies.forEach(enemy => {
+            if (projectile.x < enemy.x + enemy.width &&
+                projectile.x + projectile.width > enemy.x &&
+                projectile.y < enemy.y + enemy.height &&
+                projectile.y + projectile.height > enemy.y) {
+                
+                // 적에게 데미지
+                enemy.health -= 50;
+                
+                // 폭발 효과 생성
+                explosions.push(new Explosion(projectile.x + projectile.width/2, projectile.y + projectile.height/2, 60));
+                
+                // 발사체 제거
+                player.projectiles.splice(i, 1);
+                
+                // 적이 죽었는지 체크
+                if (enemy.health <= 0) {
+                    const enemyIndex = enemies.indexOf(enemy);
+                    if (enemyIndex > -1) {
+                        enemies.splice(enemyIndex, 1);
+                        score += 200;
+                        createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000');
+                    }
+                }
+                
+                return;
+            }
+        });
+        
+        // 수명이 다한 발사체 제거
+        if (projectile.life <= 0) {
+            player.projectiles.splice(i, 1);
+        }
+    }
+}
+
+// 폭발 효과 업데이트
+function updateExplosions() {
+    for (let i = explosions.length - 1; i >= 0; i--) {
+        const explosion = explosions[i];
+        explosion.update();
+        
+        if (explosion.life <= 0) {
+            explosions.splice(i, 1);
+        }
+    }
+}
+
+// 적 업데이트 (AI 개선)
 function updateEnemies() {
     enemies.forEach(enemy => {
-        // 간단한 AI
+        // 플레이어와의 거리 계산
+        const distanceToPlayer = Math.abs(player.x - enemy.x);
+        const playerDirection = player.x > enemy.x ? 1 : -1;
+        
+        // AI 상태 결정
+        if (distanceToPlayer < 200) {
+            // 플레이어가 가까우면 추적 모드
+            enemy.state = 'chase';
+            enemy.targetX = player.x;
+            
+            // 플레이어 방향으로 이동
+            if (enemy.x < player.x) {
+                enemy.velocityX = 2;
+                enemy.direction = 1;
+            } else {
+                enemy.velocityX = -2;
+                enemy.direction = -1;
+            }
+        } else if (distanceToPlayer < 400) {
+            // 플레이어가 중간 거리에 있으면 경계 모드
+            enemy.state = 'alert';
+            
+            // 플레이어 방향을 바라보기
+            enemy.direction = playerDirection;
+            
+            // 천천히 플레이어 방향으로 이동
+            if (enemy.x < player.x) {
+                enemy.velocityX = 0.5;
+            } else {
+                enemy.velocityX = -0.5;
+            }
+        } else {
+            // 플레이어가 멀리 있으면 순찰 모드
+            enemy.state = 'patrol';
+            
+            // 랜덤한 방향으로 이동
+            if (Math.random() < 0.02) { // 2% 확률로 방향 전환
+                enemy.direction *= -1;
+            }
+            
+            enemy.velocityX = enemy.direction * 0.8;
+        }
+        
+        // 이동 적용
         enemy.x += enemy.velocityX;
         
-        // 방향 전환
+        // 경계 체크
         if (enemy.x <= 0 || enemy.x >= STAGE_WIDTH - enemy.width) {
-            enemy.velocityX *= -1;
             enemy.direction *= -1;
+            enemy.velocityX *= -1;
         }
         
         // 적 공격 쿨다운 감소
@@ -298,6 +520,9 @@ function nextStage() {
     player.velocityX = 0;
     player.velocityY = 0;
     
+    // 발사체 초기화
+    player.projectiles = [];
+    
     // 스테이지 재생성
     generateStage();
     
@@ -314,6 +539,7 @@ function generateStage() {
     enemies = [];
     coins = [];
     particles = [];
+    explosions = [];
     
     // 지면 플랫폼
     const groundLevel = canvas.height - 100;
@@ -373,7 +599,9 @@ function generateStage() {
             velocityX: pos.velocityX,
             direction: pos.direction,
             attackCooldown: 0,
-            attackPower: pos.attackPower
+            attackPower: pos.attackPower,
+            state: 'patrol', // AI 상태: patrol, alert, chase
+            targetX: pos.x // 목표 위치
         });
     });
     
@@ -437,4 +665,4 @@ function generateEnemyPositions() {
     return positions;
 }
 
-console.log('게임 객체 관리 시스템 (밸런스 개선 버전) 로드 완료!'); 
+console.log('게임 객체 관리 시스템 (공격 시스템 및 AI 개선 버전) 로드 완료!'); 

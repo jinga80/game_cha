@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 밸런스 개선 버전
+// 게임 핵심 로직 (game-core.js) - 공격 시스템 완전 재구현 버전
 // ========================================
 
 // 게임 상태 관리
@@ -269,35 +269,80 @@ function resetPlayer() {
     player.attackCooldown = 0;
     player.invincible = false;
     player.invincibleTime = 0;
+    player.projectiles = []; // 발사체 배열 초기화
 }
 
-// 공격 함수
+// 공격 함수 (완전히 새로 구현)
 function attack() {
-    player.attacking = true;
-    player.attackCooldown = 30;
+    if (player.attackCooldown > 0) return; // 공격 쿨다운 체크
     
-    // 공격 범위 내의 적 체크
-    const attackRange = 80;
-    enemies.forEach(enemy => {
-        const distance = Math.abs(player.x - enemy.x);
-        if (distance < attackRange) {
-            enemy.health -= 50;
-            if (enemy.health <= 0) {
-                // 적 제거
-                const index = enemies.indexOf(enemy);
-                if (index > -1) {
-                    enemies.splice(index, 1);
-                    score += 200;
-                    createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000');
-                }
-            }
-        }
-    });
+    player.attacking = true;
+    player.attackCooldown = 20; // 공격 쿨다운 (0.33초)
+    
+    // 발사체 생성 위치 계산
+    let projectileX, projectileY;
+    if (player.direction > 0) {
+        // 오른쪽 방향
+        projectileX = player.x + player.width;
+        projectileY = player.y + player.height / 2;
+    } else {
+        // 왼쪽 방향
+        projectileX = player.x;
+        projectileY = player.y + player.height / 2;
+    }
+    
+    // 발사체 생성
+    const projectile = new Projectile(projectileX, projectileY, player.direction, 'normal');
+    player.projectiles.push(projectile);
     
     // 공격 파티클 생성
-    createParticle(player.x + (player.direction > 0 ? player.width : 0), player.y + player.height/2, '#FFD700');
+    createParticle(projectileX, projectileY, '#FFD700');
     
-    console.log('공격!');
+    // 공격 사운드 효과 (선택사항)
+    console.log(`공격! 발사체 생성: ${player.direction > 0 ? '오른쪽' : '왼쪽'} 방향`);
+    
+    // 공격 애니메이션 효과
+    createAttackEffect(projectileX, projectileY);
+}
+
+// 공격 이펙트 생성
+function createAttackEffect(x, y) {
+    // 공격 시작 파티클
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const velocityX = Math.cos(angle) * 3;
+        const velocityY = Math.sin(angle) * 3;
+        
+        createParticle(x, y, '#FFD700', velocityX, velocityY);
+    }
+    
+    // 공격 방향 파티클
+    const direction = player.direction;
+    for (let i = 0; i < 5; i++) {
+        const offsetX = direction * (i * 8);
+        const offsetY = (Math.random() - 0.5) * 20;
+        
+        createParticle(
+            x + offsetX, 
+            y + offsetY, 
+            '#FF4500', 
+            direction * 6, 
+            (Math.random() - 0.5) * 4
+        );
+    }
+}
+
+// 파티클 생성 (향상된 버전)
+function createParticle(x, y, color, velocityX = 0, velocityY = 0) {
+    particles.push({
+        x: x,
+        y: y,
+        velocityX: velocityX + (Math.random() - 0.5) * 2,
+        velocityY: velocityY + (Math.random() - 0.5) * 2,
+        color: color,
+        life: 30 + Math.random() * 20,
+        size: 3 + Math.random() * 3
+    });
 }
 
 // 데미지 받기 (개선된 버전)
@@ -365,18 +410,6 @@ function gameOver() {
     if (gameOverScreen) gameOverScreen.style.display = 'block';
 }
 
-// 파티클 생성
-function createParticle(x, y, color) {
-    particles.push({
-        x: x,
-        y: y,
-        velocityX: (Math.random() - 0.5) * 4,
-        velocityY: (Math.random() - 0.5) * 4,
-        color: color,
-        life: 30
-    });
-}
-
 // 컨트롤 가이드 표시
 function showControlGuide() {
     const guide = `
@@ -388,7 +421,7 @@ function showControlGuide() {
 - 스페이스바: 점프
 
 **액션:**
-- F: 공격
+- F: 무기 발사 (골드 발사체)
 - P: 일시정지
 - F11: 전체화면 토글
 
@@ -397,10 +430,17 @@ function showControlGuide() {
 - 또는 F11 키 사용
 
 **게임 시스템:**
+- F키로 적을 공격하세요!
+- 발사체가 적에게 맞으면 폭발 효과와 함께 데미지!
 - 적을 물리치고 코인을 모으세요!
 - 스테이지 진행도가 100%가 되면 다음 스테이지로!
 - 체력이 0이 되면 생명이 감소합니다
 - 무적 시간 동안은 추가 데미지를 받지 않습니다
+
+**적 AI:**
+- 플레이어가 가까우면 추적 모드로 전환
+- 중간 거리에서는 경계 모드
+- 멀리 있으면 순찰 모드로 랜덤 이동
 
 **게임 목표:**
 - 높은 점수를 기록하세요!
@@ -430,4 +470,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (밸런스 개선 버전) 로드 완료!'); 
+console.log('게임 핵심 로직 (공격 시스템 완전 재구현 버전) 로드 완료!'); 
