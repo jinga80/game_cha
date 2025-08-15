@@ -26,9 +26,9 @@ let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.
 // 플레이어 객체
 const player = {
     x: 100,
-    y: 300,
-    width: 30,
-    height: 30,
+    y: 800, // 1080p에 맞게 Y 위치 조정
+    width: 40, // 1080p에 맞게 크기 증가
+    height: 40,
     velocityX: 0,
     velocityY: 0,
     jumping: false,
@@ -38,14 +38,14 @@ const player = {
     attacking: false,
     skillCooldown: 0,
     suckedEnemies: [],
-    health: 120,
-    maxHealth: 120,
+    health: 300, // 기본 체력 300으로 증가
+    maxHealth: 300,
     // 2단 점프 관련 속성 추가
     doubleJumpAvailable: true,
     jumpCount: 0,
     maxJumps: 2,
     // 체력 회복 관련 속성 추가
-    healthRegenRate: 1, // 초당 회복량
+    healthRegenRate: 2, // 초당 회복량 증가
     healthRegenCooldown: 0, // 회복 쿨다운
     lastDamageTime: 0, // 마지막 데미지를 받은 시간
     // 마인크래프트 스타일 컨트롤 관련 속성
@@ -70,7 +70,7 @@ let backgroundObjects = [];
 const GRAVITY = 0.8;
 const JUMP_POWER = 15;
 const MOVE_SPEED = 5;
-const STAGE_WIDTH = 3000;
+const STAGE_WIDTH = 5000; // 1080p에 맞게 스테이지 너비 증가
 
 // 게임 버전 정보
 const GAME_VERSION = 'v1.03';
@@ -735,6 +735,8 @@ function suckEnemy() {
 
 // 스테이지 생성 함수
 function generateStage() {
+    console.log('스테이지 생성 시작');
+    
     platforms = [];
     enemies = [];
     bosses = [];
@@ -744,86 +746,88 @@ function generateStage() {
     
     const theme = getCurrentPlanetTheme();
     
-    // 기본 바닥 플랫폼 (완전한 평지)
-    const groundLevel = canvas.height - 100;
+    // 기본 바닥 플랫폼 (완전한 평지) - 1080p에 맞게 조정
+    const groundLevel = canvas.height - 150; // 1080p에 맞게 조정
+    
+    console.log('지면 레벨:', groundLevel);
     
     // 메인 바닥 플랫폼 (전체 너비)
     platforms.push({
         x: 0,
         y: groundLevel,
         width: STAGE_WIDTH,
-        height: 100,
+        height: 150, // 1080p에 맞게 높이 증가
         type: 'ground'
     });
     
-    // 중간중간 언덕 추가 (낙사 방지)
-    const hillPositions = [300, 800, 1200, 1600, 2000, 2400, 2800];
+    // 중간중간 언덕 추가 (낙사 방지) - 1080p에 맞게 조정
+    const hillPositions = [500, 1200, 2000, 2800, 3600, 4400];
     hillPositions.forEach(x => {
         // 언덕 높이 (낙사 방지용)
         platforms.push({
-            x: x - 50,
-            y: groundLevel - 60,
-            width: 100,
-            height: 60,
+            x: x - 80,
+            y: groundLevel - 100, // 1080p에 맞게 조정
+            width: 160,
+            height: 100,
             type: 'hill'
         });
         
         // 언덕 위 작은 플랫폼
         platforms.push({
-            x: x - 30,
-            y: groundLevel - 80,
-            width: 60,
-            height: 20,
+            x: x - 50,
+            y: groundLevel - 130,
+            width: 100,
+            height: 30,
             type: 'platform'
         });
     });
     
-    // 중간 높이 플랫폼들 (점프로 도달 가능)
-    const midPlatforms = [400, 900, 1400, 1900, 2300, 2700];
+    // 중간 높이 플랫폼들 (점프로 도달 가능) - 1080p에 맞게 조정
+    const midPlatforms = [800, 1600, 2400, 3200, 4000];
     midPlatforms.forEach(x => {
         platforms.push({
             x: x,
-            y: groundLevel - 120,
-            width: 80,
-            height: 20,
+            y: groundLevel - 200, // 1080p에 맞게 조정
+            width: 120,
+            height: 30,
             type: 'mid-platform'
         });
     });
     
-    // 높은 플랫폼들 (2단 점프로 도달 가능)
-    const highPlatforms = [600, 1100, 1700, 2100, 2500];
+    // 높은 플랫폼들 (2단 점프로 도달 가능) - 1080p에 맞게 조정
+    const highPlatforms = [1000, 1800, 2600, 3400, 4200];
     highPlatforms.forEach(x => {
         platforms.push({
             x: x,
-            y: groundLevel - 180,
-            width: 60,
-            height: 20,
+            y: groundLevel - 300, // 1080p에 맞게 조정
+            width: 100,
+            height: 30,
             type: 'high-platform'
         });
     });
     
-    // 적 생성 (밤낮에 따라 다른 적 배치)
+    // 적 생성 (언덕과 플랫폼 위에 배치) - 1080p에 맞게 조정
     const enemyPositions = [];
     
     if (isNight) {
         // 밤에는 나무왕과 포탑몬만 등장
         enemyPositions.push(
-            {x: 350, y: groundLevel - 80, type: '나무왕'},
-            {x: 850, y: groundLevel - 120, type: '포탑몬'},
-            {x: 1350, y: groundLevel - 80, type: '나무왕'},
-            {x: 1850, y: groundLevel - 120, type: '포탑몬'},
-            {x: 2350, y: groundLevel - 180, type: '나무왕'},
-            {x: 2750, y: groundLevel - 80, type: '포탑몬'}
+            {x: 600, y: groundLevel - 130, type: '나무왕'},
+            {x: 1400, y: groundLevel - 200, type: '포탑몬'},
+            {x: 2200, y: groundLevel - 130, type: '나무왕'},
+            {x: 3000, y: groundLevel - 200, type: '포탑몬'},
+            {x: 3800, y: groundLevel - 300, type: '나무왕'},
+            {x: 4600, y: groundLevel - 130, type: '포탑몬'}
         );
     } else {
         // 낮에는 나무돌이만 등장
         enemyPositions.push(
-            {x: 350, y: groundLevel - 80, type: '나무돌이'},
-            {x: 850, y: groundLevel - 120, type: '나무돌이'},
-            {x: 1350, y: groundLevel - 80, type: '나무돌이'},
-            {x: 1850, y: groundLevel - 120, type: '나무돌이'},
-            {x: 2350, y: groundLevel - 180, type: '나무돌이'},
-            {x: 2750, y: groundLevel - 80, type: '나무돌이'}
+            {x: 600, y: groundLevel - 130, type: '나무돌이'},
+            {x: 1400, y: groundLevel - 200, type: '나무돌이'},
+            {x: 2200, y: groundLevel - 130, type: '나무돌이'},
+            {x: 3000, y: groundLevel - 200, type: '나무돌이'},
+            {x: 3800, y: groundLevel - 300, type: '나무돌이'},
+            {x: 4600, y: groundLevel - 130, type: '나무돌이'}
         );
     }
     
@@ -831,16 +835,16 @@ function generateStage() {
         enemies.push(createEnemy(pos.x, pos.y, pos.type));
     });
     
-    // 보스 생성 (스테이지 끝에)
+    // 보스 생성 (스테이지 끝에) - 1080p에 맞게 조정
     if (currentStage % 20 === 0) {
         const bossType = theme.bossType;
         bosses.push({
-            x: STAGE_WIDTH - 200,
-            y: groundLevel - 100,
-            width: 80,
-            height: 80,
-            health: 200,
-            maxHealth: 200,
+            x: STAGE_WIDTH - 300,
+            y: groundLevel - 150,
+            width: 120, // 1080p에 맞게 크기 증가
+            height: 120,
+            health: 300, // 1080p에 맞게 체력 증가
+            maxHealth: 300,
             type: bossType,
             phase: 1,
             attackCooldown: 0,
@@ -848,44 +852,49 @@ function generateStage() {
         });
     }
     
-    // 코인 생성 (플랫폼 위에)
-    const coinPositions = [500, 1000, 1500, 2000, 2500];
+    // 코인 생성 (플랫폼 위에) - 1080p에 맞게 조정
+    const coinPositions = [700, 1500, 2300, 3100, 3900];
     coinPositions.forEach(x => {
         coins.push({
             x: x,
-            y: groundLevel - 150,
-            width: 20,
-            height: 20,
+            y: groundLevel - 250,
+            width: 30, // 1080p에 맞게 크기 증가
+            height: 30,
             collected: false
         });
     });
     
-    // 파워업 생성
-    const powerUpPositions = [700, 1300, 1800, 2200, 2600];
+    // 파워업 생성 - 1080p에 맞게 조정
+    const powerUpPositions = [900, 1700, 2500, 3300, 4100];
     powerUpPositions.forEach(x => {
         powerUps.push({
             x: x,
-            y: groundLevel - 200,
-            width: 25,
-            height: 25,
+            y: groundLevel - 350,
+            width: 35, // 1080p에 맞게 크기 증가
+            height: 35,
             type: 'health',
             collected: false
         });
     });
     
-    // 배경 오브젝트 생성
-    for (let i = 0; i < 20; i++) {
+    // 배경 오브젝트 생성 - 1080p에 맞게 조정
+    for (let i = 0; i < 30; i++) {
         const x = Math.random() * STAGE_WIDTH;
-        const y = groundLevel - Math.random() * 50;
+        const y = groundLevel - Math.random() * 100;
         const type = getBackgroundObjectType(theme);
         backgroundObjects.push({
             x: x,
             y: y,
-            width: 30 + Math.random() * 20,
-            height: 30 + Math.random() * 20,
+            width: 40 + Math.random() * 30, // 1080p에 맞게 크기 증가
+            height: 40 + Math.random() * 30,
             type: type
         });
     }
+    
+    console.log('스테이지 생성 완료');
+    console.log('플랫폼 수:', platforms.length);
+    console.log('적 수:', enemies.length);
+    console.log('보스 수:', bosses.length);
 }
 
 // 행성별 적 타입 생성
@@ -1622,7 +1631,7 @@ function startGame() {
         gameRunning = true;
         gamePaused = false;
         score = 0;
-        lives = 3;
+        lives = 5; // 기본 생명 5개
         
         // UI 화면들 숨기기
         if (startScreen) startScreen.style.display = 'none';
@@ -1630,16 +1639,16 @@ function startGame() {
         if (stageSelect) stageSelect.style.display = 'none';
         if (gameOverScreen) gameOverScreen.style.display = 'none';
         
-        // 게임 컨트롤 표시
-        if (mobileControls) mobileControls.style.display = 'flex';
+        // 게임 컨트롤 표시 (PC 전용이므로 모바일 컨트롤 숨김)
+        if (mobileControls) mobileControls.style.display = 'none';
         if (pauseBtn) pauseBtn.style.display = 'block';
         
         // 플레이어 초기화
         player.x = 100;
-        player.y = 300;
+        player.y = 800; // 1080p에 맞게 Y 위치 조정
         player.velocityX = 0;
         player.velocityY = 0;
-        player.health = player.maxHealth;
+        player.health = player.maxHealth; // 300
         player.jumpCount = 0;
         player.doubleJumpAvailable = true;
         player.lastDamageTime = 0;
@@ -1657,6 +1666,8 @@ function startGame() {
         updateUI();
         
         console.log('게임 시작 준비 완료');
+        console.log('캔버스 크기:', canvas.width, 'x', canvas.height);
+        console.log('플레이어 위치:', player.x, player.y);
         
         // 게임 루프 시작
         gameLoop();
@@ -1668,46 +1679,59 @@ function startGame() {
 // 게임 오버
 function gameOver() {
     gameRunning = false;
-    
-    // 최고 점수 저장
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
+    console.log('게임 오버!');
     
     // 게임 오버 화면 표시
-    finalScoreElement.textContent = score;
-    finalStageElement.textContent = currentStage;
-    highScoreElement.textContent = highScore;
-    gameOverScreen.style.display = 'flex';
+    if (gameOverScreen) {
+        gameOverScreen.style.display = 'flex';
+        
+        // 최종 점수 표시
+        const finalScoreElement = document.getElementById('finalScore');
+        if (finalScoreElement) {
+            finalScoreElement.textContent = score;
+        }
+        
+        // 달성한 스테이지 표시
+        const finalStageElement = document.getElementById('finalStage');
+        if (finalStageElement) {
+            finalStageElement.textContent = currentStage;
+        }
+    }
     
-    // 컨트롤 숨기기
-    mobileControls.style.display = 'none';
-    pauseBtn.style.display = 'none';
+    // 모바일 컨트롤 숨기기
+    if (mobileControls) {
+        mobileControls.style.display = 'none';
+    }
     
-    console.log('게임 오버!');
+    // 일시정지 버튼 숨기기
+    if (pauseBtn) {
+        pauseBtn.style.display = 'none';
+    }
 }
 
 // 생명 잃기
 function loseLife() {
     lives--;
-    player.health = player.maxHealth;
-    player.x = 100;
-    player.y = 300;
-    player.velocityX = 0;
-    player.velocityY = 0;
-    // 2단 점프 상태 초기화
-    player.jumping = false;
-    player.onGround = false;
-    player.jumpCount = 0;
-    player.doubleJumpAvailable = true;
-    // 체력 회복 상태 초기화
-    player.healthRegenCooldown = 0;
-    player.lastDamageTime = 0;
+    console.log(`생명 감소! 남은 생명: ${lives}`);
     
     if (lives <= 0) {
         gameOver();
     } else {
+        // 플레이어 위치 초기화
+        player.x = 100;
+        player.y = 800; // 1080p에 맞게 Y 위치 조정
+        player.velocityX = 0;
+        player.velocityY = 0;
+        player.health = player.maxHealth; // 체력 완전 회복
+        player.jumpCount = 0;
+        player.doubleJumpAvailable = true;
+        player.lastDamageTime = 0;
+        player.healthRegenCooldown = 0;
+        
+        // 스테이지 재생성
+        generateStage();
+        
+        // UI 업데이트
         updateUI();
     }
 }
@@ -2712,25 +2736,34 @@ function renderPlayer() {
     
     // 플레이어 그림자
     ctx.fillStyle = `rgba(0, 0, 0, ${0.4 * lightingIntensity})`;
-    ctx.fillRect(player.x - cameraX + 5, player.y + player.height + 5, player.width - 10, 10);
+    ctx.fillRect(player.x - cameraX + 8, player.y + player.height + 8, player.width - 16, 16);
     
     // 플레이어 몸체
     drawCharacter(player.x - cameraX, player.y, player.character);
     
-    // 플레이어 체력바
+    // 플레이어 체력바 (1080p에 맞게 크기 조정)
     const healthBarWidth = player.width;
-    const healthBarHeight = 6;
+    const healthBarHeight = 8;
     const healthPercentage = player.health / player.maxHealth;
     
-    ctx.fillStyle = '#FF0000';
-    ctx.fillRect(player.x - cameraX, player.y - 10, healthBarWidth, healthBarHeight);
-    ctx.fillStyle = '#00FF00';
-    ctx.fillRect(player.x - cameraX, player.y - 10, healthBarWidth * healthPercentage, healthBarHeight);
+    // 체력바 배경
+    ctx.fillStyle = '#333';
+    ctx.fillRect(player.x - cameraX, player.y - 15, healthBarWidth, healthBarHeight);
+    
+    // 체력바 (현재 체력 비율)
+    if (healthPercentage > 0.6) {
+        ctx.fillStyle = '#00FF00'; // 초록색 (체력 높음)
+    } else if (healthPercentage > 0.3) {
+        ctx.fillStyle = '#FFFF00'; // 노란색 (체력 중간)
+    } else {
+        ctx.fillStyle = '#FF0000'; // 빨간색 (체력 낮음)
+    }
+    ctx.fillRect(player.x - cameraX, player.y - 15, healthBarWidth * healthPercentage, healthBarHeight);
     
     // 체력바 테두리
-    ctx.strokeStyle = '#000';
+    ctx.strokeStyle = '#FFF';
     ctx.lineWidth = 1;
-    ctx.strokeRect(player.x - cameraX, player.y - 10, healthBarWidth, healthBarHeight);
+    ctx.strokeRect(player.x - cameraX, player.y - 15, healthBarWidth, healthBarHeight);
 }
 
 // UI 렌더링
@@ -2740,67 +2773,168 @@ function renderUI() {
     
     // 게임 정보 표시
     ctx.fillStyle = 'white';
-    ctx.font = '14px Arial';
-    ctx.fillText(`스테이지: ${currentStage}`, 10, 30);
-    ctx.fillText(`점수: ${score}`, 10, 50);
-    ctx.fillText(`생명: ${lives}`, 10, 70);
+    ctx.font = 'bold 24px Arial'; // 1080p에 맞게 폰트 크기 증가
+    ctx.fillText(`스테이지: ${currentStage}`, 20, 50);
+    ctx.fillText(`점수: ${score}`, 20, 80);
+    
+    // 생명을 하트 아이콘으로 표시
+    ctx.fillStyle = '#FF69B4';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('생명:', 20, 110);
+    
+    // 하트 아이콘 그리기
+    for (let i = 0; i < lives; i++) {
+        drawHeart(ctx, 120 + i * 40, 95, 25);
+    }
     
     // 현재 행성 정보
     ctx.fillStyle = '#FFD700';
-    ctx.fillText(`행성: ${theme.planetName}`, 10, 90);
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText(`행성: ${theme.planetName}`, 20, 150);
     
     // 버전 정보 표시 (우측 상단)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.font = 'bold 16px Arial';
+    ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(`${GAME_VERSION}`, canvas.width - 15, 30);
-    ctx.font = '12px Arial';
-    ctx.fillText(`by ${GAME_DEVELOPER}`, canvas.width - 15, 45);
-    ctx.fillText(`${GAME_RELEASE_DATE}`, canvas.width - 15, 60);
+    ctx.fillText(`${GAME_VERSION}`, canvas.width - 20, 40);
+    ctx.font = '16px Arial';
+    ctx.fillText(`by ${GAME_DEVELOPER}`, canvas.width - 20, 60);
+    ctx.fillText(`${GAME_RELEASE_DATE}`, canvas.width - 20, 80);
     ctx.textAlign = 'left';
     
     // 캐릭터 정보
     if (characters[player.character]) {
         const char = characters[player.character];
         ctx.fillStyle = '#FF69B4';
-        ctx.fillText(`캐릭터: ${player.character}`, 10, 110);
-        ctx.fillStyle = '#00FF00';
-        ctx.fillText(`HP: ${player.health}/${player.maxHealth}`, 10, 130);
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText(`캐릭터: ${player.character}`, 20, 180);
+        
+        // 체력바 그래픽 표시
+        ctx.fillStyle = '#FF0000';
+        ctx.fillText(`HP: ${player.health}/${player.maxHealth}`, 20, 210);
+        
+        // 체력바 그리기
+        const healthBarWidth = 300;
+        const healthBarHeight = 25;
+        const healthBarX = 20;
+        const healthBarY = 220;
+        
+        // 체력바 배경
+        ctx.fillStyle = '#333';
+        ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        
+        // 체력바 (현재 체력 비율)
+        const healthRatio = player.health / player.maxHealth;
+        if (healthRatio > 0.6) {
+            ctx.fillStyle = '#00FF00'; // 초록색 (체력 높음)
+        } else if (healthRatio > 0.3) {
+            ctx.fillStyle = '#FFFF00'; // 노란색 (체력 중간)
+        } else {
+            ctx.fillStyle = '#FF0000'; // 빨간색 (체력 낮음)
+        }
+        ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthRatio, healthBarHeight);
+        
+        // 체력바 테두리
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        
+        // 체력 수치 표시
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${player.health}/${player.maxHealth}`, healthBarX + healthBarWidth/2, healthBarY + 18);
+        ctx.textAlign = 'left';
+        
+        // 캐릭터 능력 정보
         ctx.fillStyle = '#FFD700';
-        ctx.fillText(`능력: ${char.ability}`, 10, 150);
+        ctx.font = '18px Arial';
+        ctx.fillText(`능력: ${char.ability}`, 20, 270);
         ctx.fillStyle = '#FF69B4';
-        ctx.fillText(`점프력: ${char.jumpPower}`, 10, 170);
+        ctx.fillText(`점프력: ${char.jumpPower}`, 20, 295);
         ctx.fillStyle = '#00FF00';
-        ctx.fillText(`속도: ${char.moveSpeed.toFixed(1)}x`, 10, 190);
+        ctx.fillText(`속도: ${char.moveSpeed.toFixed(1)}x`, 20, 320);
         
         // 2단 점프 정보 표시
         ctx.fillStyle = '#00BFFF';
-        ctx.fillText(`2단 점프: ${player.jumpCount}/${player.maxJumps}`, 10, 210);
+        ctx.font = '18px Arial';
+        ctx.fillText(`2단 점프: ${player.jumpCount}/${player.maxJumps}`, 20, 350);
         
         // 체력 회복 상태 표시
         const timeSinceDamage = Date.now() - player.lastDamageTime;
         if (timeSinceDamage > 5000 && player.health < player.maxHealth) {
             ctx.fillStyle = '#00FF00';
-            ctx.fillText(`체력 회복 중...`, 10, 230);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`체력 회복 중...`, 20, 380);
         }
         
         // 스킬 쿨다운 표시
         if (player.skillCooldown > 0) {
             ctx.fillStyle = '#FF4500';
-            ctx.fillText(`스킬 쿨다운: ${Math.ceil(player.skillCooldown / 60)}초`, 10, 250);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`스킬 쿨다운: ${Math.ceil(player.skillCooldown / 60)}초`, 20, 400);
         }
     }
     
     // 일시정지 표시
     if (gamePaused) {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 24px Arial';
+        ctx.font = 'bold 48px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('일시정지', canvas.width / 2, canvas.height / 2);
         ctx.textAlign = 'left';
     }
+}
+
+// 하트 아이콘 그리기 함수
+function drawHeart(ctx, x, y, size) {
+    ctx.fillStyle = '#FF69B4';
+    ctx.beginPath();
+    
+    // 하트 모양 그리기
+    const leftCurve = size * 0.3;
+    const rightCurve = size * 0.3;
+    const bottomCurve = size * 0.4;
+    
+    ctx.moveTo(x + size/2, y + size/4);
+    
+    // 왼쪽 곡선
+    ctx.bezierCurveTo(
+        x + size/2, y,
+        x + leftCurve, y,
+        x + leftCurve, y + size/4
+    );
+    
+    // 왼쪽 아래 곡선
+    ctx.bezierCurveTo(
+        x + leftCurve, y + size/2,
+        x + size/2, y + size * 0.8,
+        x + size/2, y + size * 0.8
+    );
+    
+    // 오른쪽 아래 곡선
+    ctx.bezierCurveTo(
+        x + size/2, y + size * 0.8,
+        x + size - rightCurve, y + size/2,
+        x + size - rightCurve, y + size/4
+    );
+    
+    // 오른쪽 곡선
+    ctx.bezierCurveTo(
+        x + size - rightCurve, y,
+        x + size/2, y,
+        x + size/2, y + size/4
+    );
+    
+    ctx.fill();
+    
+    // 하트 하이라이트
+    ctx.fillStyle = '#FFB6C1';
+    ctx.beginPath();
+    ctx.arc(x + size * 0.35, y + size * 0.3, size * 0.15, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 // 밤낮 상태 표시
