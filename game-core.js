@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 3단 점프 및 게임 시스템 확장 버전
+// 게임 핵심 로직 (game-core.js) - 보스 시스템 및 대형 미사일 구현 버전
 // ========================================
 
 // 게임 상태 관리
@@ -8,10 +8,13 @@ let gamePaused = false;
 let score = 0;
 let lives = 5;
 let currentStage = 1;
+let currentPlanet = 1; // 현재 행성 (1-5)
 let isFullscreen = false;
 let selectedCharacter = '기본'; // 선택된 캐릭터
 let gameDifficulty = '보통'; // 게임 난이도
 let isDashing = false; // 대시 상태
+let bossStage = false; // 보스 스테이지 여부
+let bossDefeated = false; // 보스 처치 여부
 
 // 게임 설정
 const GRAVITY = 0.8;
@@ -19,6 +22,269 @@ const JUMP_POWER = 18;
 const MOVE_SPEED = 6;
 const DASH_SPEED = 12; // 대시 속도
 const STAGE_WIDTH = 8000; // 맵 크기 대폭 증가
+
+// 행성 테마 설정
+const PLANET_THEMES = {
+    1: { // 나무행성 (1-20스테이지)
+        name: '🌳 나무행성',
+        background: {
+            sky: ['#4A90E2', '#7FB3D3', '#B8D4E3', '#E8F4F8'],
+            mountains: ['#228B22', '#32CD32', '#90EE90'],
+            ground: '#8B4513',
+            platforms: '#228B22'
+        },
+        enemies: ['나무돌이', '나무왕', '포탑몬'],
+        boss: '🌳 거대나무왕',
+        stageRange: [1, 20]
+    },
+    2: { // 불꽃행성 (21-40스테이지)
+        name: '🔥 불꽃행성',
+        background: {
+            sky: ['#FF4500', '#FF6347', '#FF7F50', '#FFA07A'],
+            mountains: ['#8B0000', '#DC143C', '#FF1493'],
+            ground: '#8B0000',
+            platforms: '#DC143C'
+        },
+        enemies: ['불돌이', '불왕', '용암몬'],
+        boss: '🔥 거대불왕',
+        stageRange: [21, 40]
+    },
+    3: { // 번개행성 (41-60스테이지)
+        name: '⚡ 번개행성',
+        background: {
+            sky: ['#4169E1', '#6495ED', '#87CEEB', '#B0E0E6'],
+            mountains: ['#191970', '#483D8B', '#6A5ACD'],
+            ground: '#191970',
+            platforms: '#483D8B'
+        },
+        enemies: ['번개돌이', '번개왕', '전기몬'],
+        boss: '⚡ 거대번개왕',
+        stageRange: [41, 60]
+    },
+    4: { // 원소행성 (61-80스테이지)
+        name: '🌈 원소행성',
+        background: {
+            sky: ['#9932CC', '#BA55D3', '#DDA0DD', '#E6E6FA'],
+            mountains: ['#4B0082', '#800080', '#9370DB'],
+            ground: '#4B0082',
+            platforms: '#800080'
+        },
+        enemies: ['원소돌이', '원소왕', '마법몬'],
+        boss: '🌈 거대원소왕',
+        stageRange: [61, 80]
+    },
+    5: { // 얼음행성 (81-100스테이지)
+        name: '❄️ 얼음행성',
+        background: {
+            sky: ['#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF'],
+            mountains: ['#4682B4', '#5F9EA0', '#B0C4DE'],
+            ground: '#4682B4',
+            platforms: '#5F9EA0'
+        },
+        enemies: ['얼음돌이', '얼음왕', '눈사람몬'],
+        boss: '❄️ 거대얼음왕',
+        stageRange: [81, 100]
+    }
+};
+
+// 14개 캐릭터 능력치 및 스킬 시스템
+const CHARACTERS = {
+    '기본': {
+        name: '기본',
+        emoji: '👤',
+        description: '균형잡힌 능력치',
+        stats: {
+            health: 300,
+            attack: 50,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '없음',
+        specialSkill: '없음'
+    },
+    '검사': {
+        name: '검사',
+        emoji: '⚔️',
+        description: '높은 공격력',
+        stats: {
+            health: 250,
+            attack: 80,
+            speed: 5,
+            jumpPower: 16
+        },
+        specialAbility: '검기 발사',
+        specialSkill: '검기 폭풍'
+    },
+    '궁수': {
+        name: '궁수',
+        emoji: '🏹',
+        description: '원거리 공격',
+        stats: {
+            health: 200,
+            attack: 60,
+            speed: 7,
+            jumpPower: 20
+        },
+        specialAbility: '화살 발사',
+        specialSkill: '화살 폭풍'
+    },
+    '망치전문가': {
+        name: '망치전문가',
+        emoji: '🔨',
+        description: '파괴의 달인',
+        stats: {
+            health: 350,
+            attack: 90,
+            speed: 4,
+            jumpPower: 14
+        },
+        specialAbility: '망치 던지기',
+        specialSkill: '지진'
+    },
+    '폭탄전문가': {
+        name: '폭탄전문가',
+        emoji: '💣',
+        description: '폭발 전문가',
+        stats: {
+            health: 180,
+            attack: 100,
+            speed: 8,
+            jumpPower: 22
+        },
+        specialAbility: '폭탄 설치',
+        specialSkill: '폭발'
+    },
+    '미사일발사달인': {
+        name: '미사일발사달인',
+        emoji: '🚀',
+        description: '정밀 타격',
+        stats: {
+            health: 220,
+            attack: 85,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '미사일 발사',
+        specialSkill: '미사일 폭격'
+    },
+    '풍선': {
+        name: '풍선',
+        emoji: '🎈',
+        description: '가벼운 몸',
+        stats: {
+            health: 150,
+            attack: 40,
+            speed: 9,
+            jumpPower: 25
+        },
+        specialAbility: '공중 부유',
+        specialSkill: '풍선 폭발'
+    },
+    '왕': {
+        name: '왕',
+        emoji: '👑',
+        description: '왕의 권위',
+        stats: {
+            health: 400,
+            attack: 70,
+            speed: 5,
+            jumpPower: 16
+        },
+        specialAbility: '왕의 명령',
+        specialSkill: '왕의 분노'
+    },
+    '스피어맨': {
+        name: '스피어맨',
+        emoji: '🔱',
+        description: '창술 달인',
+        stats: {
+            health: 280,
+            attack: 75,
+            speed: 6,
+            jumpPower: 17
+        },
+        specialAbility: '창 던지기',
+        specialSkill: '창의 폭풍'
+    },
+    '어둠의마법사': {
+        name: '어둠의마법사',
+        emoji: '🌑',
+        description: '어둠의 힘',
+        stats: {
+            health: 200,
+            attack: 95,
+            speed: 5,
+            jumpPower: 15
+        },
+        specialAbility: '어둠의 힘',
+        specialSkill: '어둠의 폭풍'
+    },
+    '마법사': {
+        name: '마법사',
+        emoji: '🔮',
+        description: '마법 전문가',
+        stats: {
+            health: 180,
+            attack: 90,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '마법 발사',
+        specialSkill: '마법 폭풍'
+    },
+    '발키리': {
+        name: '발키리',
+        emoji: '🛡️',
+        description: '신의 힘',
+        stats: {
+            health: 400,
+            attack: 45,
+            speed: 6,
+            jumpPower: 19
+        },
+        specialAbility: '신의 힘',
+        specialSkill: '신의 폭풍'
+    },
+    '방패맨': {
+        name: '방패맨',
+        emoji: '🛡️',
+        description: '철벽 방어',
+        stats: {
+            health: 450,
+            attack: 35,
+            speed: 4,
+            jumpPower: 14
+        },
+        specialAbility: '철벽 방어',
+        specialSkill: '방패 돌진'
+    },
+    '거인': {
+        name: '거인',
+        emoji: '👹',
+        description: '거대한 힘',
+        stats: {
+            health: 500,
+            attack: 40,
+            speed: 3,
+            jumpPower: 12
+        },
+        specialAbility: '거대한 힘',
+        specialSkill: '거인의 분노'
+    },
+    '미사일': {
+        name: '미사일',
+        emoji: '🚀',
+        description: '초고속',
+        stats: {
+            health: 120,
+            attack: 60,
+            speed: 10,
+            jumpPower: 28
+        },
+        specialAbility: '초고속',
+        specialSkill: '초고속 돌진'
+    }
+};
 
 // 난이도별 설정
 const DIFFICULTY_SETTINGS = {
@@ -245,6 +511,10 @@ function startGame() {
     gameRunning = true;
     gamePaused = false;
     score = 0;
+    currentStage = 1;
+    currentPlanet = 1; // 첫 번째 행성부터 시작
+    bossStage = false;
+    bossDefeated = false;
     
     // 난이도별 설정 적용
     const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
@@ -280,11 +550,12 @@ function togglePause() {
     console.log(gamePaused ? '게임 일시정지' : '게임 재개');
 }
 
-// 점프 함수 (3단 점프 구현)
+// 점프 함수 (캐릭터별 능력치 적용)
 function jump() {
     if (player.onGround && !player.jumping) {
-        // 첫 번째 점프
-        player.velocityY = -JUMP_POWER;
+        // 첫 번째 점프 (캐릭터별 점프력 적용)
+        const jumpPower = player.jumpPower || JUMP_POWER;
+        player.velocityY = -jumpPower;
         player.jumping = true;
         player.onGround = false;
         player.jumpCount = 1;
@@ -292,10 +563,11 @@ function jump() {
         // 점프 파티클 생성
         createParticle(player.x + player.width/2, player.y + player.height, '#87CEEB');
         
-        console.log('첫 번째 점프!');
+        console.log(`${player.character} 첫 번째 점프! (점프력: ${jumpPower})`);
     } else if (player.jumping && player.jumpCount < 3) {
         // 두 번째, 세 번째 점프 (공중에서)
-        const jumpPower = player.jumpCount === 2 ? JUMP_POWER * 0.8 : JUMP_POWER * 0.6;
+        const baseJumpPower = player.jumpPower || JUMP_POWER;
+        const jumpPower = player.jumpCount === 2 ? baseJumpPower * 0.8 : baseJumpPower * 0.6;
         player.velocityY = -jumpPower;
         player.jumpCount++;
         
@@ -308,7 +580,7 @@ function jump() {
         }
         createParticle(player.x + player.width/2, player.y + player.height, particleColor);
         
-        console.log(`${player.jumpCount}번째 점프!`);
+        console.log(`${player.character} ${player.jumpCount}번째 점프! (점프력: ${jumpPower})`);
     }
 }
 
@@ -319,9 +591,30 @@ function resetPlayer() {
     player.velocityX = 0;
     player.velocityY = 0;
     
-    // 난이도별 체력 설정
+    // 선택된 캐릭터의 능력치 적용
+    const character = CHARACTERS[selectedCharacter];
+    if (character) {
+        player.character = selectedCharacter;
+        player.maxHealth = character.stats.health;
+        player.health = character.stats.health;
+        player.attackPower = character.stats.attack;
+        player.speed = character.stats.speed;
+        player.jumpPower = character.stats.jumpPower;
+        
+        console.log(`캐릭터 ${selectedCharacter} 능력치 적용: 체력 ${character.stats.health}, 공격력 ${character.stats.attack}, 속도 ${character.stats.speed}`);
+    } else {
+        // 기본 능력치
+        player.character = '기본';
+        player.maxHealth = 300;
+        player.health = 300;
+        player.attackPower = 50;
+        player.speed = 6;
+        player.jumpPower = 18;
+    }
+    
+    // 난이도별 능력치 조정
     const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
-    player.maxHealth = 300 * difficulty.playerHealth;
+    player.maxHealth = Math.round(player.maxHealth * difficulty.playerHealth);
     player.health = player.maxHealth;
     
     player.attacking = false;
@@ -331,11 +624,14 @@ function resetPlayer() {
     player.projectiles = []; // 발사체 배열 초기화
     player.jumpCount = 0; // 점프 횟수 초기화
     isDashing = false; // 대시 상태 초기화
+    
+    // 대형 미사일 쿨다운 초기화
+    player.missileCooldown = 0;
 }
 
-// 공격 함수 (연속 공격 시스템 - 버그 수정)
+// 공격 함수 (캐릭터별 공격력 적용)
 function attack() {
-    // 공격 쿨다운 체크 (버그 수정: attacking 상태 체크 제거)
+    // 공격 쿨다운 체크
     if (player.attackCooldown > 0) return;
     
     player.attacking = true;
@@ -353,15 +649,39 @@ function attack() {
         projectileY = player.y + player.height / 2;
     }
     
+    // 캐릭터별 발사체 타입 결정
+    let projectileType = 'normal';
+    let projectileDamage = player.attackPower || 50;
+    
+    // 특수 캐릭터별 공격 효과
+    if (player.character === '검사') {
+        projectileType = 'sword';
+        projectileDamage = Math.round(projectileDamage * 1.2); // 검사는 20% 추가 데미지
+    } else if (player.character === '궁수') {
+        projectileType = 'arrow';
+        projectileDamage = Math.round(projectileDamage * 1.1); // 궁수는 10% 추가 데미지
+    } else if (player.character === '망치전문가') {
+        projectileType = 'hammer';
+        projectileDamage = Math.round(projectileDamage * 1.3); // 망치전문가는 30% 추가 데미지
+    } else if (player.character === '폭탄전문가') {
+        projectileType = 'bomb';
+        projectileDamage = Math.round(projectileDamage * 1.4); // 폭탄전문가는 40% 추가 데미지
+    }
+    
     // 발사체 생성
-    const projectile = new Projectile(projectileX, projectileY, player.direction, 'normal');
+    const projectile = new Projectile(projectileX, projectileY, player.direction, projectileType, projectileDamage);
     player.projectiles.push(projectile);
     
-    // 공격 파티클 생성
-    createParticle(projectileX, projectileY, '#FFD700');
+    // 공격 파티클 생성 (캐릭터별 색상)
+    let particleColor = '#FFD700'; // 기본 골드
+    if (player.character === '검사') particleColor = '#FF4500'; // 빨강
+    else if (player.character === '궁수') particleColor = '#00FF00'; // 초록
+    else if (player.character === '망치전문가') particleColor = '#8B4513'; // 갈색
+    else if (player.character === '폭탄전문가') particleColor = '#FF0000'; // 빨강
     
-    // 공격 사운드 효과 (선택사항)
-    console.log(`연속 공격! 발사체 생성: ${player.direction > 0 ? '오른쪽' : '왼쪽'} 방향`);
+    createParticle(projectileX, projectileY, particleColor);
+    
+    console.log(`${player.character} 공격! 데미지: ${projectileDamage}, 타입: ${projectileType}`);
     
     // 공격 애니메이션 효과
     createAttackEffect(projectileX, projectileY);
@@ -370,6 +690,36 @@ function attack() {
     setTimeout(() => {
         player.attacking = false;
     }, 100); // 0.1초 후 공격 상태 해제
+}
+
+// 대형 미사일 발사 함수
+function fireMissile() {
+    if (player.missileCooldown > 0) return;
+    
+    player.missileCooldown = 600; // 10초 (60fps * 10)
+    
+    // 미사일 생성 위치 계산
+    let missileX, missileY;
+    if (player.direction > 0) {
+        missileX = player.x + player.width;
+        missileY = player.y + player.height / 2;
+    } else {
+        missileX = player.x;
+        missileY = player.y + player.height / 2;
+    }
+    
+    // 대형 미사일 생성
+    const missile = new Missile(missileX, missileY, player.direction);
+    player.projectiles.push(missile);
+    
+    // 미사일 발사 파티클 생성
+    for (let i = 0; i < 15; i++) {
+        createParticle(missileX, missileY, '#FF4500', 
+            (Math.random() - 0.5) * 8, 
+            (Math.random() - 0.5) * 8);
+    }
+    
+    console.log('대형 미사일 발사!');
 }
 
 // 공격 이펙트 생성
@@ -442,6 +792,19 @@ function takeDamage(damage) {
     updateUI();
 }
 
+// 체력 회복 함수
+function healPlayer(amount) {
+    player.health = Math.min(player.health + amount, player.maxHealth);
+    
+    // 회복 파티클 생성
+    for (let i = 0; i < 10; i++) {
+        createParticle(player.x + player.width/2, player.y, '#00FF00');
+    }
+    
+    console.log(`체력 회복: +${amount}, 현재 체력: ${player.health}`);
+    updateUI();
+}
+
 // 생명 감소
 function loseLife() {
     lives--;
@@ -490,6 +853,7 @@ function showControlGuide() {
 
 **액션:**
 - F: 무기 발사 (골드 발사체, 연속 발사!)
+- E: 대형 미사일 (광역 데미지, 10초 쿨다운!)
 - P: 일시정지
 - F11: 전체화면 토글
 
@@ -499,6 +863,7 @@ function showControlGuide() {
 
 **게임 시스템:**
 - F키로 적을 연속 공격하세요! (0.13초마다!)
+- E키로 대형 미사일을 발사하세요! (광역 데미지!)
 - 발사체가 적에게 맞으면 폭발 효과와 함께 데미지!
 - 3단 점프로 더 높은 곳으로 이동 가능!
 - S키로 대시하여 빠르게 이동!
@@ -506,17 +871,25 @@ function showControlGuide() {
 - 스테이지 진행도가 100%가 되면 다음 스테이지로!
 - 체력이 0이 되면 생명이 감소합니다
 - 무적 시간 동안은 추가 데미지를 받지 않습니다
+- 체력 회복 아이템을 먹어 체력을 회복하세요!
+
+**보스 시스템:**
+- 5스테이지마다 강력한 보스 등장!
+- 보스를 처치하면 다음 구간으로 진행!
+- 보스는 일반 적보다 훨씬 강력합니다!
 
 **적 AI (강화됨!):**
 - 플레이어가 가까우면 추적 모드로 전환 (범위 확장!)
 - 중간 거리에서는 경계 모드
 - 멀리 있으면 순찰 모드로 랜덤 이동
 - 적들도 점프를 합니다!
+- 원거리 공격 적, 폭발 적 등 다양한 적 등장!
 
 **게임 목표:**
 - 높은 점수를 기록하세요!
 - 최대한 많은 스테이지를 클리어하세요!
 - 연속 공격으로 적들을 물리치세요!
+- 보스를 처치하여 다음 구간으로 진행하세요!
     `;
     
     alert(guide);
@@ -531,6 +904,7 @@ function gameLoop() {
         updatePlayer();
         updateEnemies();
         updateCoins();
+        updateHealthItems();
         updateParticles();
         
         // 렌더링
@@ -542,4 +916,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (3단 점프 및 게임 시스템 확장 버전) 로드 완료!'); 
+console.log('게임 핵심 로직 (보스 시스템 및 대형 미사일 구현 버전) 로드 완료!'); 

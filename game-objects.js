@@ -38,7 +38,7 @@ let stageTimer = 0; // 스테이지 타이머
 
 // 발사체 클래스
 class Projectile {
-    constructor(x, y, direction, type = 'normal') {
+    constructor(x, y, direction, type = 'normal', damage = 50) {
         this.x = x;
         this.y = y;
         this.width = 15;
@@ -47,6 +47,7 @@ class Projectile {
         this.velocityY = 0;
         this.direction = direction;
         this.type = type;
+        this.damage = damage; // 데미지 추가
         this.life = 60; // 1초 후 사라짐
         this.exploded = false;
     }
@@ -68,19 +69,47 @@ class Projectile {
         const x = this.x - cameraX;
         if (x < 0 || x > canvas.width) return;
         
+        // 발사체 타입별 색상
+        let bodyColor = '#FFD700'; // 기본 골드
+        let borderColor = '#FF4500'; // 기본 오렌지
+        let tailColor = '#FF4500'; // 기본 오렌지
+        
+        switch(this.type) {
+            case 'sword':
+                bodyColor = '#FF4500'; // 빨강
+                borderColor = '#8B0000'; // 진한 빨강
+                tailColor = '#FF0000'; // 빨강
+                break;
+            case 'arrow':
+                bodyColor = '#00FF00'; // 초록
+                borderColor = '#006400'; // 진한 초록
+                tailColor = '#32CD32'; // 라임
+                break;
+            case 'hammer':
+                bodyColor = '#8B4513'; // 갈색
+                borderColor = '#654321'; // 진한 갈색
+                tailColor = '#A0522D'; // 시에나
+                break;
+            case 'bomb':
+                bodyColor = '#FF0000'; // 빨강
+                borderColor = '#8B0000'; // 진한 빨강
+                tailColor = '#FF4500'; // 오렌지
+                break;
+        }
+        
         // 발사체 몸체
-        ctx.fillStyle = '#FFD700';
+        ctx.fillStyle = bodyColor;
         ctx.beginPath();
         ctx.arc(x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2);
         ctx.fill();
         
         // 발사체 테두리
-        ctx.strokeStyle = '#FF4500';
+        ctx.strokeStyle = borderColor;
         ctx.lineWidth = 2;
         ctx.stroke();
         
         // 발사체 꼬리 효과
-        ctx.fillStyle = '#FF4500';
+        ctx.fillStyle = tailColor;
         ctx.beginPath();
         ctx.arc(x + this.width/2 - this.direction * 8, this.y + this.height/2, 5, 0, Math.PI * 2);
         ctx.fill();
@@ -155,10 +184,12 @@ let explosions = [];
 
 // 플레이어 업데이트
 function updatePlayer() {
-    // 이동 처리 (대시 기능 포함)
-    let currentMoveSpeed = MOVE_SPEED;
+    // 이동 처리 (캐릭터별 속도 적용)
+    let currentMoveSpeed = player.speed || MOVE_SPEED;
+    let currentDashSpeed = currentMoveSpeed * 2; // 대시는 기본 속도의 2배
+    
     if (keys['KeyS'] && (keys['KeyA'] || keys['ArrowLeft'] || keys['KeyD'] || keys['ArrowRight'])) {
-        currentMoveSpeed = DASH_SPEED; // 대시 속도
+        currentMoveSpeed = currentDashSpeed; // 대시 속도
         isDashing = true;
         
         // 대시 파티클 생성
@@ -270,14 +301,19 @@ function updateProjectiles() {
                 projectile.y < enemy.y + enemy.height &&
                 projectile.y + projectile.height > enemy.y) {
                 
-                // 적에게 데미지
-                enemy.health -= 50;
+                // 캐릭터별 데미지 적용
+                const damage = projectile.damage || 50;
+                enemy.health -= damage;
                 
-                // 폭발 효과 생성
-                explosions.push(new Explosion(projectile.x + projectile.width/2, projectile.y + projectile.height/2, 60));
+                // 폭발 효과 생성 (데미지에 따라 크기 조정)
+                const explosionSize = Math.min(60 + damage * 0.5, 100);
+                explosions.push(new Explosion(projectile.x + projectile.width/2, projectile.y + projectile.height/2, explosionSize));
                 
                 // 발사체 제거
                 player.projectiles.splice(i, 1);
+                
+                // 데미지 파티클 생성
+                createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000');
                 
                 // 적이 죽었는지 체크
                 if (enemy.health <= 0) {
@@ -285,8 +321,20 @@ function updateProjectiles() {
                     if (enemyIndex > -1) {
                         enemies.splice(enemyIndex, 1);
                         score += 200;
-                        createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000');
+                        
+                        // 적 처치 파티클 (캐릭터별 색상)
+                        let particleColor = '#FF0000';
+                        if (player.character === '검사') particleColor = '#FF4500';
+                        else if (player.character === '궁수') particleColor = '#00FF00';
+                        else if (player.character === '망치전문가') particleColor = '#8B4513';
+                        else if (player.character === '폭탄전문가') particleColor = '#FF0000';
+                        
+                        createParticle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, particleColor);
+                        
+                        console.log(`${player.character}가 ${enemy.type}를 처치! 데미지: ${damage}`);
                     }
+                } else {
+                    console.log(`${player.character}가 ${enemy.type}에게 ${damage} 데미지! 남은 체력: ${enemy.health}`);
                 }
                 
                 return;
@@ -558,11 +606,29 @@ function showStageCompleteMessage() {
 // 다음 스테이지로
 function nextStage() {
     currentStage++;
+    
+    // 행성 변경 체크 (20스테이지마다)
+    if (currentStage > 20 && currentPlanet < 5) {
+        currentPlanet++;
+        console.log(`🎉 새로운 행성으로 이동! ${PLANET_THEMES[currentPlanet].name}`);
+        
+        // 행성 변경 축하 파티클
+        for (let i = 0; i < 50; i++) {
+            createParticle(
+                canvas.width / 2 + (Math.random() - 0.5) * 400,
+                canvas.height / 2 + (Math.random() - 0.5) * 300,
+                ['#FFD700', '#FF4500', '#00FF00', '#0080FF', '#FF00FF'][currentPlanet - 1],
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10
+            );
+        }
+    }
+    
     stageProgress = 0;
     stageComplete = false;
     stageTimer = 0;
     
-    console.log(`스테이지 ${currentStage} 시작!`);
+    console.log(`스테이지 ${currentStage} 시작! (${PLANET_THEMES[currentPlanet].name})`);
     
     // 플레이어 위치 재설정
     player.x = 100;
@@ -583,7 +649,7 @@ function nextStage() {
 
 // 스테이지 생성
 function generateStage() {
-    console.log('스테이지 생성 시작...');
+    console.log(`스테이지 ${currentStage} 생성 시작... (${PLANET_THEMES[currentPlanet].name})`);
     
     // 기존 객체들 초기화
     platforms = [];
@@ -592,38 +658,53 @@ function generateStage() {
     particles = [];
     explosions = [];
     
-    // 지면 플랫폼
+    // 현재 행성 테마 가져오기
+    const planetTheme = PLANET_THEMES[currentPlanet];
+    
+    // 지면 플랫폼 (행성 테마에 맞는 색상)
     const groundLevel = canvas.height - 100;
     platforms.push({
         x: 0,
         y: groundLevel,
         width: STAGE_WIDTH,
         height: 100,
-        type: 'ground'
+        type: 'ground',
+        color: planetTheme.background.ground
     });
     
-    // 중간 플랫폼들 (HD2D 스타일로 낮춤)
+    // 중간 플랫폼들 (행성 테마에 맞는 색상)
     const platformPositions = [
-        {x: 400, y: 700, width: 200, height: 20},   // 650 → 700 (더 낮게)
-        {x: 800, y: 650, width: 200, height: 20},   // 550 → 650 (더 낮게)
-        {x: 1200, y: 600, width: 200, height: 20},  // 450 → 600 (더 낮게)
-        {x: 1600, y: 550, width: 200, height: 20},  // 350 → 550 (더 낮게)
-        {x: 2000, y: 500, width: 200, height: 20},  // 250 → 500 (더 낮게)
-        {x: 2400, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
-        {x: 2800, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
-        {x: 3200, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
-        {x: 3600, y: 700, width: 200, height: 20},  // 700 → 700 (더 낮게)
-        {x: 4000, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
-        {x: 4400, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
-        {x: 4800, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
-        {x: 5200, y: 500, width: 200, height: 20},  // 300 → 500 (더 낮게)
-        {x: 5600, y: 550, width: 200, height: 20},  // 400 → 550 (더 낮게)
-        {x: 6000, y: 600, width: 200, height: 20},  // 500 → 600 (더 낮게)
-        {x: 6400, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
-        {x: 6800, y: 700, width: 200, height: 20},  // 700 → 700 (더 낮게)
-        {x: 7200, y: 650, width: 200, height: 20},  // 600 → 650 (더 낮게)
-        {x: 7600, y: 600, width: 200, height: 20}   // 500 → 600 (더 낮게)
+        {x: 400, y: 700, width: 200, height: 20},
+        {x: 800, y: 650, width: 200, height: 20},
+        {x: 1200, y: 600, width: 200, height: 20},
+        {x: 1600, y: 550, width: 200, height: 20},
+        {x: 2000, y: 500, width: 200, height: 20},
+        {x: 2400, y: 550, width: 200, height: 20},
+        {x: 2800, y: 600, width: 200, height: 20},
+        {x: 3200, y: 650, width: 200, height: 20},
+        {x: 3600, y: 700, width: 200, height: 20},
+        {x: 4000, y: 650, width: 200, height: 20},
+        {x: 4400, y: 600, width: 200, height: 20},
+        {x: 4800, y: 550, width: 200, height: 20},
+        {x: 5200, y: 500, width: 200, height: 20},
+        {x: 5600, y: 550, width: 200, height: 20},
+        {x: 6000, y: 600, width: 200, height: 20},
+        {x: 6400, y: 650, width: 200, height: 20},
+        {x: 6800, y: 700, width: 200, height: 20},
+        {x: 7200, y: 650, width: 200, height: 20},
+        {x: 7600, y: 600, width: 200, height: 20}
     ];
+    
+    platformPositions.forEach(pos => {
+        platforms.push({
+            x: pos.x,
+            y: pos.y,
+            width: pos.width,
+            height: pos.height,
+            type: 'platform',
+            color: planetTheme.background.platforms
+        });
+    });
     
     platformPositions.forEach(pos => {
         platforms.push({
@@ -704,66 +785,92 @@ function generateStage() {
     console.log(`스테이지 생성 완료! 플랫폼: ${platforms.length}, 적: ${enemies.length}, 코인: ${coins.length}`);
 }
 
-// 스테이지별 적 위치 및 능력치 생성 (수량 대폭 증가)
+// 스테이지별 적 위치 및 능력치 생성 (행성 테마별로 다른 적)
 function generateEnemyPositions() {
     const groundLevel = canvas.height - 100;
     const positions = [];
+    const planetTheme = PLANET_THEMES[currentPlanet];
     
-    // 기본 적들 (수량 대폭 증가)
+    // 행성별 기본 적 타입
+    const basicEnemyType = planetTheme.enemies[0]; // 첫 번째 적 타입
+    const eliteEnemyType = planetTheme.enemies[1]; // 두 번째 적 타입
+    const specialEnemyType = planetTheme.enemies[2]; // 세 번째 적 타입
+    
+    // 기본 적들 (행성 테마에 맞는 타입)
     const basicEnemies = [
         // 첫 번째 구간 (0-2000)
-        {x: 300, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 600, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 900, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 1200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 1500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 1800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 300, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 600, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 900, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1200, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1500, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 1800, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
         
         // 두 번째 구간 (2000-4000)
-        {x: 2200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 2500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 2800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 3100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 3400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 3700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2200, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2500, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 2800, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3100, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3400, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 3700, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
         
         // 세 번째 구간 (4000-6000)
-        {x: 4200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 4500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 4800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 5100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 5400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 5700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 4200, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 4500, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 4800, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5100, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5400, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 5700, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
         
         // 네 번째 구간 (6000-8000)
-        {x: 6200, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 6500, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 6800, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 7100, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 7400, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15},
-        {x: 7700, y: groundLevel - 60, type: '나무돌이', health: 80, velocityX: -1, direction: -1, attackPower: 15}
+        {x: 6200, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 6500, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 6800, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7100, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7400, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15},
+        {x: 7700, y: groundLevel - 60, type: basicEnemyType, health: 80, velocityX: -1, direction: -1, attackPower: 15}
     ];
     
     positions.push(...basicEnemies);
     
-    // 스테이지별 특수 적 추가
+    // 스테이지별 특수 적 추가 (행성 테마에 맞는 타입)
     if (currentStage >= 5) {
         positions.push(
-            {x: 5500, y: groundLevel - 60, type: '나무왕', health: 150, velocityX: -0.8, direction: -1, attackPower: 25}
+            {x: 5500, y: groundLevel - 60, type: eliteEnemyType, health: 150, velocityX: -0.8, direction: -1, attackPower: 25}
         );
     }
     
     if (currentStage >= 10) {
         positions.push(
-            {x: 6000, y: groundLevel - 60, type: '포탑몬', health: 120, velocityX: 0, direction: 1, attackPower: 20}
+            {x: 6000, y: groundLevel - 60, type: specialEnemyType, health: 120, velocityX: 0, direction: 1, attackPower: 20}
         );
     }
     
     if (currentStage >= 15) {
         positions.push(
-            {x: 6500, y: groundLevel - 60, type: '나무왕', health: 150, velocityX: -0.8, direction: -1, attackPower: 25},
-            {x: 7000, y: groundLevel - 60, type: '포탑몬', health: 120, velocityX: 0, direction: 1, attackPower: 20}
+            {x: 6500, y: groundLevel - 60, type: eliteEnemyType, health: 150, velocityX: -0.8, direction: -1, attackPower: 25},
+            {x: 7000, y: groundLevel - 60, type: specialEnemyType, health: 120, velocityX: 0, direction: 1, attackPower: 20}
         );
+    }
+    
+    // 보스 스테이지 (5의 배수 스테이지)
+    if (currentStage % 5 === 0) {
+        bossStage = true;
+        const bossX = STAGE_WIDTH - 500; // 맵 끝부분에 보스 배치
+        positions.push({
+            x: bossX,
+            y: groundLevel - 120, // 보스는 더 크게
+            width: 80, // 보스 크기
+            height: 120,
+            type: planetTheme.boss,
+            health: 500,
+            maxHealth: 500,
+            velocityX: 0,
+            direction: -1,
+            attackPower: 50,
+            isBoss: true
+        });
+        console.log(`보스 스테이지! ${planetTheme.boss} 등장!`);
     }
     
     // 난이도별 적 능력치 조정

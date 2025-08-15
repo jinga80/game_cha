@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>재미있는게임 - v1.11</title>
+    <title>재미있는게임 - v1.12</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
         <canvas id="gameCanvas" width="1920" height="1080"></canvas>
         
         <!-- 버전 정보 -->
-        <div class="version-info">v1.11</div>
+        <div class="version-info">v1.12</div>
         
         <!-- 전체화면 토글 버튼 -->
         <button id="fullscreenToggle" class="fullscreen-toggle">⛶</button>
@@ -76,13 +76,112 @@
                     </div>
                 </div>
                 
+                <div class="character-card" data-character="망치전문가">
+                    <div class="character-avatar">🔨</div>
+                    <h3>망치전문가</h3>
+                    <p>파괴의 달인</p>
+                    <div class="character-stats">
+                        <span>❤️ 350</span>
+                        <span>⚔️ 90</span>
+                        <span>🚀 4</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="폭탄전문가">
+                    <div class="character-avatar">💣</div>
+                    <h3>폭탄전문가</h3>
+                    <p>폭발 전문가</p>
+                    <div class="character-stats">
+                        <span>❤️ 180</span>
+                        <span>⚔️ 100</span>
+                        <span>🚀 8</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="미사일발사달인">
+                    <div class="character-avatar">🚀</div>
+                    <h3>미사일발사달인</h3>
+                    <p>정밀 타격</p>
+                    <div class="character-stats">
+                        <span>❤️ 220</span>
+                        <span>⚔️ 85</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="풍선">
+                    <div class="character-avatar">🎈</div>
+                    <h3>풍선</h3>
+                    <p>가벼운 몸</p>
+                    <div class="character-stats">
+                        <span>❤️ 150</span>
+                        <span>⚔️ 40</span>
+                        <span>🚀 9</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="왕">
+                    <div class="character-avatar">👑</div>
+                    <h3>왕</h3>
+                    <p>왕의 권위</p>
+                    <div class="character-stats">
+                        <span>❤️ 400</span>
+                        <span>⚔️ 70</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="스피어맨">
+                    <div class="character-avatar">🔱</div>
+                    <h3>스피어맨</h3>
+                    <p>창술 달인</p>
+                    <div class="character-stats">
+                        <span>❤️ 280</span>
+                        <span>⚔️ 75</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="어둠의마법사">
+                    <div class="character-avatar">🌑</div>
+                    <h3>어둠의마법사</h3>
+                    <p>어둠의 힘</p>
+                    <div class="character-stats">
+                        <span>❤️ 200</span>
+                        <span>⚔️ 95</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
                 <div class="character-card" data-character="마법사">
                     <div class="character-avatar">🔮</div>
                     <h3>마법사</h3>
-                    <p>마법 공격</p>
+                    <p>마법 전문가</p>
                     <div class="character-stats">
                         <span>❤️ 180</span>
                         <span>⚔️ 90</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="발키리">
+                    <div class="character-avatar">🛡️</div>
+                    <h3>발키리</h3>
+                    <p>신의 힘</p>
+                    <div class="character-stats">
+                        <span>❤️ 400</span>
+                        <span>⚔️ 45</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="방패맨">
+                    <div class="character-avatar">🛡️</div>
+                    <h3>방패맨</h3>
+                    <p>철벽 방어</p>
+                    <div class="character-stats">
+                        <span>❤️ 450</span>
+                        <span>⚔️ 35</span>
                         <span>🚀 4</span>
                     </div>
                 </div>
@@ -90,7 +189,7 @@
                 <div class="character-card" data-character="거인">
                     <div class="character-avatar">👹</div>
                     <h3>거인</h3>
-                    <p>높은 체력</p>
+                    <p>거대한 힘</p>
                     <div class="character-stats">
                         <span>❤️ 500</span>
                         <span>⚔️ 40</span>
@@ -98,14 +197,14 @@
                     </div>
                 </div>
                 
-                <div class="character-card" data-character="발키리">
-                    <div class="character-avatar">🛡️</div>
-                    <h3>발키리</h3>
-                    <p>방어 특화</p>
+                <div class="character-card" data-character="미사일">
+                    <div class="character-avatar">🚀</div>
+                    <h3>미사일</h3>
+                    <p>초고속</p>
                     <div class="character-stats">
-                        <span>❤️ 400</span>
-                        <span>⚔️ 45</span>
-                        <span>🚀 6</span>
+                        <span>❤️ 120</span>
+                        <span>⚔️ 60</span>
+                        <span>🚀 10</span>
                     </div>
                 </div>
             </div>

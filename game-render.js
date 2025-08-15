@@ -21,19 +21,21 @@ function renderGame() {
     renderPauseScreen();
 }
 
-// 배경 렌더링 (HD2D 스타일)
+// 배경 렌더링 (행성 테마별 HD2D 스타일)
 function renderBackground() {
-    // 하늘 그라데이션 (HD2D 스타일)
+    const planetTheme = PLANET_THEMES[currentPlanet];
+    
+    // 하늘 그라데이션 (행성 테마별 색상)
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#4A90E2'); // 더 진한 파란색
-    gradient.addColorStop(0.3, '#7FB3D3'); // 중간 톤
-    gradient.addColorStop(0.7, '#B8D4E3'); // 연한 톤
-    gradient.addColorStop(1, '#E8F4F8'); // 매우 연한 톤
+    gradient.addColorStop(0, planetTheme.background.sky[0]);
+    gradient.addColorStop(0.3, planetTheme.background.sky[1]);
+    gradient.addColorStop(0.7, planetTheme.background.sky[2]);
+    gradient.addColorStop(1, planetTheme.background.sky[3]);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 원거리 산들 (HD2D 스타일)
-    ctx.fillStyle = 'rgba(74, 144, 226, 0.4)'; // 파란색 계열
+    // 원거리 산들 (행성 테마별 색상)
+    ctx.fillStyle = planetTheme.background.mountains[0] + '66'; // 40% 투명도
     for (let i = 0; i < 6; i++) {
         const x = (i * 350) % (canvas.width + 400);
         const height = 150 + Math.sin(i * 0.8) * 40;
@@ -46,7 +48,7 @@ function renderBackground() {
     }
     
     // 중간 거리 산들
-    ctx.fillStyle = 'rgba(74, 144, 226, 0.6)';
+    ctx.fillStyle = planetTheme.background.mountains[1] + '99'; // 60% 투명도
     for (let i = 0; i < 4; i++) {
         const x = (i * 500) % (canvas.width + 600);
         const height = 100 + Math.sin(i * 1.2) * 30;
@@ -58,8 +60,52 @@ function renderBackground() {
         ctx.fill();
     }
     
-    // 구름들 (HD2D 스타일)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    // 행성별 특수 효과
+    if (currentPlanet === 2) { // 불꽃행성
+        // 용암 효과
+        ctx.fillStyle = '#FF4500';
+        for (let i = 0; i < 8; i++) {
+            const x = (i * 1000) % (canvas.width + 200);
+            const y = canvas.height - 50 + Math.sin(Date.now() * 0.005 + i) * 10;
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else if (currentPlanet === 3) { // 번개행성
+        // 번개 효과
+        if (Math.random() < 0.1) {
+            ctx.strokeStyle = '#FFFF00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(Math.random() * canvas.width, 0);
+            ctx.lineTo(Math.random() * canvas.width, canvas.height);
+            ctx.stroke();
+        }
+    } else if (currentPlanet === 4) { // 원소행성
+        // 마법 효과
+        ctx.fillStyle = '#9932CC' + '33';
+        for (let i = 0; i < 10; i++) {
+            const x = (i * 200 + Date.now() * 0.002) % canvas.width;
+            const y = 100 + Math.sin(i * 0.5) * 50;
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    } else if (currentPlanet === 5) { // 얼음행성
+        // 눈 효과
+        ctx.fillStyle = '#FFFFFF';
+        for (let i = 0; i < 30; i++) {
+            const x = (i * 100 + Date.now() * 0.001) % canvas.width;
+            const y = (i * 50 + Date.now() * 0.002) % canvas.height;
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    // 구름들 (행성별 색상)
+    const cloudColor = currentPlanet === 2 ? 'rgba(255, 69, 0, 0.6)' : 'rgba(255, 255, 255, 0.8)';
+    ctx.fillStyle = cloudColor;
     for (let i = 0; i < 5; i++) {
         const x = (i * 400 + Date.now() * 0.003) % (canvas.width + 400) - 200;
         const y = 60 + Math.sin(i * 0.7) * 40;
@@ -72,21 +118,23 @@ function renderBackground() {
         ctx.fill();
         
         // 구름 몸체
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillStyle = cloudColor;
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
         
         // 구름 하이라이트
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillStyle = cloudColor.replace('0.8', '0.9');
         ctx.beginPath();
         ctx.arc(x - size * 0.3, y - size * 0.3, size * 0.4, 0, Math.PI * 2);
         ctx.fill();
     }
 }
 
-// 플랫폼 렌더링 (HD2D 스타일)
+// 플랫폼 렌더링 (행성 테마별 HD2D 스타일)
 function renderPlatforms() {
+    const planetTheme = PLANET_THEMES[currentPlanet];
+    
     platforms.forEach(platform => {
         const x = platform.x - cameraX;
         if (x + platform.width > 0 && x < canvas.width) {
@@ -94,26 +142,27 @@ function renderPlatforms() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
             ctx.fillRect(x + 6, platform.y + 6, platform.width, platform.height);
             
-            // 플랫폼 몸체 (HD2D 스타일)
+            // 플랫폼 몸체 (행성 테마별 색상)
             if (platform.type === 'ground') {
-                // 지면은 더 진한 색상
-                ctx.fillStyle = '#8B4513';
+                // 지면은 행성 테마 색상
+                ctx.fillStyle = platform.color || planetTheme.background.ground;
             } else {
-                // 중간 플랫폼은 HD2D 스타일
+                // 중간 플랫폼은 행성 테마 색상
+                const baseColor = platform.color || planetTheme.background.platforms;
                 const gradient = ctx.createLinearGradient(x, platform.y, x, platform.y + platform.height);
-                gradient.addColorStop(0, '#A0522D');
-                gradient.addColorStop(0.5, '#8B4513');
-                gradient.addColorStop(1, '#654321');
+                gradient.addColorStop(0, baseColor);
+                gradient.addColorStop(0.5, baseColor);
+                gradient.addColorStop(1, baseColor);
                 ctx.fillStyle = gradient;
             }
             ctx.fillRect(x, platform.y, platform.width, platform.height);
             
-            // 플랫폼 테두리 (HD2D 스타일)
-            ctx.strokeStyle = '#654321';
+            // 플랫폼 테두리 (행성 테마별 색상)
+            ctx.strokeStyle = platform.color || planetTheme.background.platforms;
             ctx.lineWidth = 2;
             ctx.strokeRect(x, platform.y, platform.width, platform.height);
             
-            // 플랫폼 하이라이트 (HD2D 스타일)
+            // 플랫폼 하이라이트 (행성 테마별 색상)
             ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.fillRect(x, platform.y, platform.width, 6);
             
@@ -535,7 +584,7 @@ function renderPauseScreen() {
     }
 }
 
-// UI 렌더링 (HTML로 처리되므로 여기서는 추가 렌더링 불필요)
+// UI 렌더링 (행성 정보 포함)
 function updateUI() {
     const stageDisplay = document.getElementById('stageDisplay');
     const scoreDisplay = document.getElementById('scoreDisplay');
@@ -544,7 +593,10 @@ function updateUI() {
     const healthDisplay = document.getElementById('healthDisplay');
     const healthFill = document.getElementById('healthFill');
     
-    if (stageDisplay) stageDisplay.textContent = currentStage;
+    if (stageDisplay) {
+        const planetTheme = PLANET_THEMES[currentPlanet];
+        stageDisplay.innerHTML = `${planetTheme.name}<br><span style="font-size: 0.8em;">스테이지 ${currentStage}</span>`;
+    }
     if (scoreDisplay) scoreDisplay.textContent = score;
     if (livesDisplay) livesDisplay.textContent = lives;
     if (healthDisplay) healthDisplay.textContent = player.health;
@@ -564,6 +616,21 @@ function updateUI() {
             heartsContainer.appendChild(heart);
         }
     }
+    
+    // 행성 정보 표시 (새로운 요소)
+    let planetInfo = document.getElementById('planetInfo');
+    if (!planetInfo) {
+        planetInfo = document.createElement('div');
+        planetInfo.id = 'planetInfo';
+        planetInfo.className = 'planet-info';
+        document.querySelector('.top-info-bar').appendChild(planetInfo);
+    }
+    
+    const planetTheme = PLANET_THEMES[currentPlanet];
+    planetInfo.innerHTML = `
+        <span class="label">행성:</span>
+        <span class="value">${planetTheme.name}</span>
+    `;
 }
 
 console.log('게임 렌더링 시스템 (HD2D 스타일 적용 버전) 로드 완료!'); 
