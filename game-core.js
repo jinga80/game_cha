@@ -1,5 +1,5 @@
 // ========================================
-// 게임 핵심 로직 (game-core.js) - 공격 시스템 완전 재구현 버전
+// 게임 핵심 로직 (game-core.js) - 연속 공격 및 2단 점프 구현 버전
 // ========================================
 
 // 게임 상태 관리
@@ -164,9 +164,7 @@ function setupEventListeners() {
         switch(e.code) {
             case 'Space':
                 e.preventDefault();
-                if (player.onGround) {
-                    jump();
-                }
+                jump();
                 break;
             case 'KeyP':
                 e.preventDefault();
@@ -244,17 +242,28 @@ function togglePause() {
     console.log(gamePaused ? '게임 일시정지' : '게임 재개');
 }
 
-// 점프 함수
+// 점프 함수 (2단 점프 구현)
 function jump() {
     if (player.onGround && !player.jumping) {
+        // 첫 번째 점프
         player.velocityY = -JUMP_POWER;
         player.jumping = true;
         player.onGround = false;
+        player.jumpCount = 1;
         
         // 점프 파티클 생성
         createParticle(player.x + player.width/2, player.y + player.height, '#87CEEB');
         
-        console.log('점프!');
+        console.log('첫 번째 점프!');
+    } else if (player.jumping && player.jumpCount < 2) {
+        // 두 번째 점프 (공중에서)
+        player.velocityY = -JUMP_POWER * 0.8; // 두 번째 점프는 약간 약함
+        player.jumpCount = 2;
+        
+        // 이중 점프 파티클 생성
+        createParticle(player.x + player.width/2, player.y + player.height, '#FFD700');
+        
+        console.log('두 번째 점프!');
     }
 }
 
@@ -270,14 +279,15 @@ function resetPlayer() {
     player.invincible = false;
     player.invincibleTime = 0;
     player.projectiles = []; // 발사체 배열 초기화
+    player.jumpCount = 0; // 점프 횟수 초기화
 }
 
-// 공격 함수 (완전히 새로 구현)
+// 공격 함수 (연속 공격 시스템)
 function attack() {
     if (player.attackCooldown > 0) return; // 공격 쿨다운 체크
     
     player.attacking = true;
-    player.attackCooldown = 20; // 공격 쿨다운 (0.33초)
+    player.attackCooldown = 8; // 공격 쿨다운 대폭 감소 (0.13초)
     
     // 발사체 생성 위치 계산
     let projectileX, projectileY;
@@ -299,7 +309,7 @@ function attack() {
     createParticle(projectileX, projectileY, '#FFD700');
     
     // 공격 사운드 효과 (선택사항)
-    console.log(`공격! 발사체 생성: ${player.direction > 0 ? '오른쪽' : '왼쪽'} 방향`);
+    console.log(`연속 공격! 발사체 생성: ${player.direction > 0 ? '오른쪽' : '왼쪽'} 방향`);
     
     // 공격 애니메이션 효과
     createAttackEffect(projectileX, projectileY);
@@ -418,10 +428,10 @@ function showControlGuide() {
 **이동:**
 - A / ←: 왼쪽 이동
 - D / →: 오른쪽 이동
-- 스페이스바: 점프
+- 스페이스바: 점프 (2단 점프 가능!)
 
 **액션:**
-- F: 무기 발사 (골드 발사체)
+- F: 무기 발사 (골드 발사체, 연속 발사!)
 - P: 일시정지
 - F11: 전체화면 토글
 
@@ -430,21 +440,24 @@ function showControlGuide() {
 - 또는 F11 키 사용
 
 **게임 시스템:**
-- F키로 적을 공격하세요!
+- F키로 적을 연속 공격하세요! (0.13초마다!)
 - 발사체가 적에게 맞으면 폭발 효과와 함께 데미지!
+- 2단 점프로 더 높은 곳으로 이동 가능!
 - 적을 물리치고 코인을 모으세요!
 - 스테이지 진행도가 100%가 되면 다음 스테이지로!
 - 체력이 0이 되면 생명이 감소합니다
 - 무적 시간 동안은 추가 데미지를 받지 않습니다
 
-**적 AI:**
-- 플레이어가 가까우면 추적 모드로 전환
+**적 AI (강화됨!):**
+- 플레이어가 가까우면 추적 모드로 전환 (범위 확장!)
 - 중간 거리에서는 경계 모드
 - 멀리 있으면 순찰 모드로 랜덤 이동
+- 적들도 점프를 합니다!
 
 **게임 목표:**
 - 높은 점수를 기록하세요!
 - 최대한 많은 스테이지를 클리어하세요!
+- 연속 공격으로 적들을 물리치세요!
     `;
     
     alert(guide);
@@ -470,4 +483,4 @@ function gameLoop() {
 }
 
 // 게임 시작
-console.log('게임 핵심 로직 (공격 시스템 완전 재구현 버전) 로드 완료!'); 
+console.log('게임 핵심 로직 (연속 공격 및 2단 점프 구현 버전) 로드 완료!'); 

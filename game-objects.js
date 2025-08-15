@@ -19,7 +19,8 @@ const player = {
     attackCooldown: 0,
     invincible: false, // 무적 상태
     invincibleTime: 0, // 무적 시간
-    projectiles: [] // 발사체 배열
+    projectiles: [], // 발사체 배열
+    jumpCount: 0 // 점프 횟수
 };
 
 // 게임 객체들
@@ -298,28 +299,37 @@ function updateExplosions() {
     }
 }
 
-// 적 업데이트 (AI 개선)
+// 적 업데이트 (AI 강화 및 점프 기능 추가)
 function updateEnemies() {
     enemies.forEach(enemy => {
         // 플레이어와의 거리 계산
         const distanceToPlayer = Math.abs(player.x - enemy.x);
         const playerDirection = player.x > enemy.x ? 1 : -1;
         
-        // AI 상태 결정
-        if (distanceToPlayer < 200) {
+        // AI 상태 결정 (범위 확장!)
+        if (distanceToPlayer < 350) { // 200 → 350으로 확장
             // 플레이어가 가까우면 추적 모드
             enemy.state = 'chase';
             enemy.targetX = player.x;
             
             // 플레이어 방향으로 이동
             if (enemy.x < player.x) {
-                enemy.velocityX = 2;
+                enemy.velocityX = 3; // 2 → 3으로 증가
                 enemy.direction = 1;
             } else {
-                enemy.velocityX = -2;
+                enemy.velocityX = -3; // -2 → -3으로 증가
                 enemy.direction = -1;
             }
-        } else if (distanceToPlayer < 400) {
+            
+            // 적 점프 시스템 (플레이어가 높은 곳에 있을 때)
+            if (player.y < enemy.y - 50 && enemy.onGround && Math.random() < 0.02) {
+                enemy.velocityY = -15; // 적 점프력
+                enemy.onGround = false;
+                enemy.jumping = true;
+                console.log(`${enemy.type}가 점프!`);
+            }
+            
+        } else if (distanceToPlayer < 600) { // 400 → 600으로 확장
             // 플레이어가 중간 거리에 있으면 경계 모드
             enemy.state = 'alert';
             
@@ -328,10 +338,11 @@ function updateEnemies() {
             
             // 천천히 플레이어 방향으로 이동
             if (enemy.x < player.x) {
-                enemy.velocityX = 0.5;
+                enemy.velocityX = 1; // 0.5 → 1로 증가
             } else {
-                enemy.velocityX = -0.5;
+                enemy.velocityX = -1; // -0.5 → -1로 증가
             }
+            
         } else {
             // 플레이어가 멀리 있으면 순찰 모드
             enemy.state = 'patrol';
@@ -341,8 +352,30 @@ function updateEnemies() {
                 enemy.direction *= -1;
             }
             
-            enemy.velocityX = enemy.direction * 0.8;
+            enemy.velocityX = enemy.direction * 1.2; // 0.8 → 1.2로 증가
         }
+        
+        // 적 중력 및 점프 처리
+        enemy.velocityY += 0.6; // 적 중력 (플레이어보다 약함)
+        enemy.y += enemy.velocityY;
+        
+        // 적 플랫폼 충돌 체크
+        enemy.onGround = false;
+        platforms.forEach(platform => {
+            if (enemy.x < platform.x + platform.width &&
+                enemy.x + enemy.width > platform.x &&
+                enemy.y < platform.y + platform.height &&
+                enemy.y + enemy.height > platform.y) {
+                
+                if (enemy.velocityY > 0 && enemy.y < platform.y) {
+                    // 위에서 착지
+                    enemy.y = platform.y - enemy.height;
+                    enemy.velocityY = 0;
+                    enemy.onGround = true;
+                    enemy.jumping = false;
+                }
+            }
+        });
         
         // 이동 적용
         enemy.x += enemy.velocityX;
@@ -514,14 +547,15 @@ function nextStage() {
     
     console.log(`스테이지 ${currentStage} 시작!`);
     
-    // 플레이어 위치 재설정
-    player.x = 100;
-    player.y = 800;
-    player.velocityX = 0;
-    player.velocityY = 0;
-    
-    // 발사체 초기화
-    player.projectiles = [];
+            // 플레이어 위치 재설정
+        player.x = 100;
+        player.y = 800;
+        player.velocityX = 0;
+        player.velocityY = 0;
+        
+        // 발사체 초기화
+        player.projectiles = [];
+        player.jumpCount = 0; // 점프 횟수 초기화
     
     // 스테이지 재생성
     generateStage();
@@ -551,27 +585,27 @@ function generateStage() {
         type: 'ground'
     });
     
-    // 중간 플랫폼들
+    // 중간 플랫폼들 (점프 가능한 높이로 조정)
     const platformPositions = [
-        {x: 400, y: 700, width: 200, height: 20},
-        {x: 800, y: 600, width: 200, height: 20},
-        {x: 1200, y: 500, width: 200, height: 20},
-        {x: 1600, y: 400, width: 200, height: 20},
-        {x: 2000, y: 300, width: 200, height: 20},
-        {x: 2400, y: 400, width: 200, height: 20},
-        {x: 2800, y: 500, width: 200, height: 20},
-        {x: 3200, y: 600, width: 200, height: 20},
-        {x: 3600, y: 700, width: 200, height: 20},
-        {x: 4000, y: 600, width: 200, height: 20},
-        {x: 4400, y: 500, width: 200, height: 20},
-        {x: 4800, y: 400, width: 200, height: 20},
-        {x: 5200, y: 300, width: 200, height: 20},
-        {x: 5600, y: 400, width: 200, height: 20},
-        {x: 6000, y: 500, width: 200, height: 20},
-        {x: 6400, y: 600, width: 200, height: 20},
-        {x: 6800, y: 700, width: 200, height: 20},
-        {x: 7200, y: 600, width: 200, height: 20},
-        {x: 7600, y: 500, width: 200, height: 20}
+        {x: 400, y: 650, width: 200, height: 20},   // 700 → 650 (점프 가능)
+        {x: 800, y: 550, width: 200, height: 20},   // 600 → 550 (2단 점프 가능)
+        {x: 1200, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
+        {x: 1600, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
+        {x: 2000, y: 250, width: 200, height: 20},  // 300 → 250 (2단 점프 가능)
+        {x: 2400, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
+        {x: 2800, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
+        {x: 3200, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
+        {x: 3600, y: 650, width: 200, height: 20},  // 700 → 650 (점프 가능)
+        {x: 4000, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
+        {x: 4400, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
+        {x: 4800, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
+        {x: 5200, y: 250, width: 200, height: 20},  // 300 → 250 (2단 점프 가능)
+        {x: 5600, y: 350, width: 200, height: 20},  // 400 → 350 (2단 점프 가능)
+        {x: 6000, y: 450, width: 200, height: 20},  // 500 → 450 (2단 점프 가능)
+        {x: 6400, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
+        {x: 6800, y: 650, width: 200, height: 20},  // 700 → 650 (점프 가능)
+        {x: 7200, y: 550, width: 200, height: 20},  // 600 → 550 (2단 점프 가능)
+        {x: 7600, y: 450, width: 200, height: 20}   // 500 → 450 (2단 점프 가능)
     ];
     
     platformPositions.forEach(pos => {
@@ -597,18 +631,50 @@ function generateStage() {
             health: pos.health,
             maxHealth: pos.health,
             velocityX: pos.velocityX,
+            velocityY: 0, // 점프를 위한 velocityY 추가
             direction: pos.direction,
             attackCooldown: 0,
             attackPower: pos.attackPower,
             state: 'patrol', // AI 상태: patrol, alert, chase
-            targetX: pos.x // 목표 위치
+            targetX: pos.x, // 목표 위치
+            onGround: true, // 점프를 위한 onGround 추가
+            jumping: false // 점프 상태 추가
         });
     });
     
-    // 코인 생성
-    for (let i = 0; i < 50; i++) {
-        const x = Math.random() * STAGE_WIDTH;
-        const y = Math.random() * (canvas.height - 200) + 100;
+    // 코인 생성 (점프 가능한 위치에 최적화)
+    coins = [];
+    
+    // 지면 코인들
+    for (let i = 0; i < 20; i++) {
+        const x = 200 + i * 400;
+        const y = groundLevel - 30; // 지면 위
+        coins.push({
+            x: x,
+            y: y,
+            width: 20,
+            height: 20,
+            collected: false
+        });
+    }
+    
+    // 플랫폼 위 코인들
+    platformPositions.forEach((platform, index) => {
+        if (index % 2 === 0) { // 짝수 인덱스 플랫폼에만 코인 배치
+            coins.push({
+                x: platform.x + platform.width / 2 - 10,
+                y: platform.y - 30,
+                width: 20,
+                height: 20,
+                collected: false
+            });
+        }
+    });
+    
+    // 공중 코인들 (2단 점프로 획득 가능)
+    for (let i = 0; i < 15; i++) {
+        const x = 300 + i * 500;
+        const y = 200 + Math.sin(i * 0.5) * 100; // 사인파 형태로 배치
         coins.push({
             x: x,
             y: y,
