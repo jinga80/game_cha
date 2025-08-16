@@ -22,6 +22,8 @@ function renderGame() {
     renderCoins(ctx, canvas);
     renderEnemies(ctx, canvas);
     renderProjectiles(ctx, canvas);
+    renderEnemyProjectiles(ctx, canvas); // 적 발사체 렌더링 추가
+    renderBossProjectiles(ctx, canvas); // 보스 미사일 렌더링 추가
     renderExplosions(ctx, canvas);
     renderParticles(ctx, canvas);
     renderPlayer(ctx, canvas);
@@ -639,6 +641,55 @@ function renderParticles() {
         }
     });
     ctx.globalAlpha = 1;
+}
+
+// 적 발사체 렌더링 함수
+function renderEnemyProjectiles() {
+    if (!window.enemyProjectiles || window.enemyProjectiles.length === 0) {
+        return;
+    }
+    
+    // 스테이지 완료 상태 확인
+    if (typeof stageComplete !== 'undefined' && stageComplete) {
+        return;
+    }
+    
+    window.enemyProjectiles.forEach(projectile => {
+        const x = projectile.x - cameraX;
+        
+        // 화면 밖의 발사체는 렌더링하지 않음
+        if (x < -50 || x > canvas.width + 50 || 
+            projectile.y < -50 || projectile.y > canvas.height + 50) {
+            return;
+        }
+        
+        // 적 발사체 렌더링 (빨간색 원형)
+        const gradient = ctx.createRadialGradient(
+            x + projectile.width/2, projectile.y + projectile.height/2, 0,
+            x + projectile.width/2, projectile.y + projectile.height/2, projectile.width/2
+        );
+        gradient.addColorStop(0, '#FF0000');
+        gradient.addColorStop(0.7, '#CC0000');
+        gradient.addColorStop(1, '#990000');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x + projectile.width/2, projectile.y + projectile.height/2, projectile.width/2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 발사체 테두리
+        ctx.strokeStyle = '#FF6666';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 발사체 꼬리 효과
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+        ctx.beginPath();
+        ctx.arc(x + projectile.width/2 - projectile.velocityX * 2, 
+               projectile.y + projectile.height/2 - projectile.velocityY * 2, 
+               projectile.width/3, 0, Math.PI * 2);
+        ctx.fill();
+    });
 }
 
 // 보스 미사일 렌더링 함수

@@ -453,6 +453,11 @@ function updateProjectiles() {
                                 window.bossProjectiles.length = 0;
                             }
                             
+                            // 적 발사체들도 제거 (보스 처치 시)
+                            if (window.enemyProjectiles) {
+                                window.enemyProjectiles.length = 0;
+                            }
+                            
                             // 보스 처치 축하 파티클
                             for (let i = 0; i < 50; i++) {
                                 createParticle(
@@ -950,6 +955,20 @@ function updateEnemies() {
             createBossMissile(enemy);
             enemy.bossAttackCooldown = 45; // 0.75초 쿨다운
         }
+        
+        // 일반 적 원거리 공격 (새로운 시스템)
+        if (enemy.rangeAttackCooldown <= 0 && !enemy.isBoss && enemy.canRangeAttack) {
+            const distanceToPlayer = Math.abs(enemy.x - player.x);
+            if (distanceToPlayer > 150 && distanceToPlayer < 400) { // 150~400 거리에서 공격
+                createEnemyProjectile(enemy);
+                enemy.rangeAttackCooldown = 120; // 2초 쿨다운
+            }
+        }
+        
+        // 원거리 공격 쿨다운 감소
+        if (enemy.rangeAttackCooldown > 0) {
+            enemy.rangeAttackCooldown--;
+        }
         }
         
         // 이동 적용
@@ -1234,6 +1253,12 @@ function nextStage() {
         console.log(`🗑️ 보스 미사일 배열 완전 정리`);
     }
     
+    // 적 발사체들 완전 제거
+    if (window.enemyProjectiles) {
+        window.enemyProjectiles.length = 0;
+        console.log(`🗑️ 적 발사체 배열 완전 정리`);
+    }
+    
     // 보스 관련 전역 변수들 정리
     if (typeof window.forceSpawnBoss === 'function') {
         delete window.forceSpawnBoss;
@@ -1405,6 +1430,10 @@ function generateStage() {
             enemy.bossTimer = 0; // 보스 타이머 초기화
             enemy.bossAttackCooldown = 0; // 보스 공격 쿨다운 초기화
             enemy.bossHealthBar = true; // 보스 체력바 표시
+        } else {
+            // 일반 적들에게 원거리 공격 능력 추가
+            enemy.rangeAttackCooldown = 0; // 원거리 공격 쿨다운 초기화
+            enemy.canRangeAttack = Math.random() < 0.4; // 40% 확률로 원거리 공격 가능
         }
         
         enemies.push(enemy);
@@ -2003,10 +2032,60 @@ function createBossMissile(boss) {
     console.log(`🚀 ${boss.type} 미사일 공격! 데미지: ${missile.damage}`);
 }
 
+// 적 원거리 발사체 생성 함수
+function createEnemyProjectile(enemy) {
+    // 플레이어 방향으로 발사체 생성
+    const playerDirection = player.x > enemy.x ? 1 : -1;
+    const projectileSpeed = 4 + Math.random() * 2; // 4-6 속도
+    
+    const projectile = {
+        x: enemy.x + (playerDirection > 0 ? enemy.width : 0),
+        y: enemy.y + enemy.height/2,
+        width: 12,
+        height: 12,
+        velocityX: playerDirection * projectileSpeed,
+        velocityY: (Math.random() - 0.5) * 2, // 약간의 랜덤한 수직 움직임
+        damage: Math.floor(15 * getDifficultyMultiplier()), // 스테이지별 데미지 증가
+        type: 'enemy_projectile',
+        life: 180, // 3초 후 자동 소멸
+        enemyType: enemy.type // 어떤 적이 발사했는지 기록
+    };
+    
+    // 발사체 파티클 효과
+    for (let i = 0; i < 5; i++) {
+        createParticle(
+            projectile.x + Math.random() * 12,
+            projectile.y + Math.random() * 12,
+            '#FF0000', // 빨간색
+            (Math.random() - 0.5) * 3,
+            (Math.random() - 0.5) * 3
+        );
+    }
+    
+    // 발사체 효과음 재생
+    if (window.audioSystem && window.audioSystem.playMagicSound) {
+        window.audioSystem.playMagicSound();
+    }
+    
+    // 적 발사체 배열에 추가
+    if (!window.enemyProjectiles) {
+        window.enemyProjectiles = [];
+    }
+    window.enemyProjectiles.push(projectile);
+    
+    console.log(`🎯 ${enemy.type} 원거리 공격! 데미지: ${projectile.damage}`);
+}
+
 // 보스 난이도 계수 계산 함수
 function getBossDifficultyMultiplier() {
     const currentStage = window.currentStage || 1;
     return 1 + (currentStage - 1) * 0.3; // 스테이지마다 30%씩 강해짐
+}
+
+// 일반 적 난이도 계수 계산 함수
+function getDifficultyMultiplier() {
+    const currentStage = window.currentStage || 1;
+    return 1 + (currentStage - 1) * 0.2; // 스테이지마다 20%씩 강해짐
 }
 
 // 폭발 효과 생성 함수
@@ -2027,6 +2106,67 @@ function createExplosion(x, y, radius) {
     }
     
     console.log(`💥 폭발 효과 생성: (${x}, ${y}), 반지름: ${radius}`);
+}
+
+// 적 발사체 업데이트 및 충돌 처리 함수
+function updateEnemyProjectiles() {
+    if (!window.enemyProjectiles || window.enemyProjectiles.length === 0) {
+        return;
+    }
+    
+    for (let i = window.enemyProjectiles.length - 1; i >= 0; i--) {
+        const projectile = window.enemyProjectiles[i];
+        
+        // 발사체 이동
+        projectile.x += projectile.velocityX;
+        projectile.y += projectile.velocityY;
+        
+        // 수명 감소
+        if (projectile.life) {
+            projectile.life--;
+            if (projectile.life <= 0) {
+                window.enemyProjectiles.splice(i, 1);
+                continue;
+            }
+        }
+        
+        // 화면 밖으로 나가면 제거
+        if (projectile.y > canvas.height + 100 || 
+            projectile.x < cameraX - 100 || 
+            projectile.x > cameraX + canvas.width + 100) {
+            window.enemyProjectiles.splice(i, 1);
+            continue;
+        }
+        
+        // 플레이어와의 충돌 체크
+        if (player.x < projectile.x + projectile.width &&
+            player.x + player.width > projectile.x &&
+            player.y < projectile.y + projectile.height &&
+            player.y + player.height > projectile.y) {
+            
+            if (!player.invincible) {
+                // 적 발사체로 인한 데미지
+                takeDamage(projectile.damage);
+                
+                // 충돌 파티클 생성
+                createParticle(
+                    projectile.x + projectile.width/2,
+                    projectile.y + projectile.height/2,
+                    '#FF0000'
+                );
+                
+                // 적 발사체 제거
+                window.enemyProjectiles.splice(i, 1);
+                
+                // 피격 효과음 재생
+                if (window.audioSystem && window.audioSystem.playPlayerHitSound) {
+                    window.audioSystem.playPlayerHitSound();
+                }
+                
+                console.log(`💥 ${projectile.enemyType} 원거리 공격으로 데미지 ${projectile.damage} 받음!`);
+            }
+        }
+    }
 }
 
 // 보스 미사일 업데이트 및 충돌 처리 함수
