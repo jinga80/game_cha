@@ -1219,6 +1219,7 @@ function gameLoop() {
         updateEnemies();
         updateCoins();
         updateProjectiles();
+        updateBossProjectiles(); // 보스 미사일 업데이트 추가
         updateExplosions();
         updateParticles();
         updateStageProgress();

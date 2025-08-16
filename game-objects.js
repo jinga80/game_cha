@@ -444,6 +444,15 @@ function updateProjectiles() {
                             stageProgress = 100;
                             stageCompleteProcessed = false; // 자동 진행 플래그 초기화
                             
+                            // 보스 관련 데이터 완전 정리
+                            window.bossSpawned = false;
+                            window.currentStageBossData = null;
+                            
+                            // 보스 미사일들 제거
+                            if (window.bossProjectiles) {
+                                window.bossProjectiles.length = 0;
+                            }
+                            
                             // 보스 처치 축하 파티클
                             for (let i = 0; i < 50; i++) {
                                 createParticle(
@@ -456,8 +465,13 @@ function updateProjectiles() {
                             }
                             
                             // 보스 처치 효과음 재생
-                            if (audioSystem && audioSystem.playStageClearSound) {
-                                audioSystem.playStageClearSound();
+                            if (window.audioSystem && window.audioSystem.playBossDefeatSound) {
+                                window.audioSystem.playBossDefeatSound();
+                            }
+                            
+                            // 스테이지 클리어 효과음 재생
+                            if (window.audioSystem && window.audioSystem.playStageClearSound) {
+                                window.audioSystem.playStageClearSound();
                             }
                             
                             // 스테이지 클리어 메시지 표시
@@ -912,18 +926,30 @@ function updateEnemies() {
                 enemy.bossAttackCooldown--;
             }
             
-            // 보스 특수 능력 (지진 효과) - 빈도 감소
-            if (enemy.bossState === 'attack' && enemy.bossTimer % 180 === 0) { // 120 → 180으로 증가
-                // 지진 파티클 생성
-                for (let i = 0; i < 8; i++) { // 10 → 8로 감소
-                    createParticle(
-                        enemy.x + enemy.width/2 + (Math.random() - 0.5) * 80, // 100 → 80으로 감소
-                        enemy.y + enemy.height,
-                        '#8B4513'
-                    );
-                }
-                console.log(`🏆 ${enemy.type} 지진 효과!`);
+                    // 보스 특수 능력 (지진 효과) - 빈도 감소
+        if (enemy.bossState === 'attack' && enemy.bossTimer % 180 === 0) { // 120 → 180으로 증가
+            // 지진 파티클 생성
+            for (let i = 0; i < 8; i++) { // 10 → 8로 감소
+                createParticle(
+                    enemy.x + enemy.width/2 + (Math.random() - 0.5) * 80, // 100 → 80으로 감소
+                    enemy.y + enemy.height,
+                    '#8B4513'
+                );
             }
+            console.log(`🏆 ${enemy.type} 지진 효과!`);
+        }
+        
+        // 보스 레이저 공격
+        if (enemy.bossState === 'attack' && enemy.bossTimer % 120 === 0 && enemy.bossAttackCooldown <= 0) {
+            createBossLaser(enemy);
+            enemy.bossAttackCooldown = 60; // 1초 쿨다운
+        }
+        
+        // 보스 미사일 공격
+        if (enemy.bossState === 'attack' && enemy.bossTimer % 90 === 0 && enemy.bossAttackCooldown <= 0) {
+            createBossMissile(enemy);
+            enemy.bossAttackCooldown = 45; // 0.75초 쿨다운
+        }
         }
         
         // 이동 적용
@@ -947,8 +973,13 @@ function updateEnemies() {
             player.y + player.height > enemy.y) {
             
             if (!player.attacking && !player.invincible && enemy.attackCooldown <= 0) {
-                // 적이 플레이어를 공격
-                enemyAttack(enemy);
+                // 보스인 경우 더 강한 접촉 데미지
+                if (enemy.isBoss) {
+                    bossContactDamage(enemy);
+                } else {
+                    // 일반 적이 플레이어를 공격
+                    enemyAttack(enemy);
+                }
             }
         }
         
@@ -962,6 +993,45 @@ function updateEnemies() {
             }
         }
     });
+}
+
+// 보스 접촉 데미지 함수
+function bossContactDamage(boss) {
+    // 보스 접촉 쿨다운 설정 (더 짧게)
+    boss.attackCooldown = 60; // 1초 (60fps 기준)
+    
+    // 보스 접촉 데미지 (스테이지별로 증가)
+    const baseDamage = 40; // 기본 40 데미지
+    const difficultyMultiplier = getBossDifficultyMultiplier();
+    const damage = Math.floor(baseDamage * difficultyMultiplier);
+    
+    // 플레이어에게 데미지 적용
+    takeDamage(damage);
+    
+    // 강력한 접촉 파티클 생성
+    for (let i = 0; i < 15; i++) {
+        createParticle(
+            player.x + player.width/2 + (Math.random() - 0.5) * 50,
+            player.y + player.height/2 + (Math.random() - 0.5) * 50,
+            '#FF0000', // 빨간색
+            (Math.random() - 0.5) * 10,
+            (Math.random() - 0.5) * 10
+        );
+    }
+    
+    // 플레이어를 강하게 밀어내기
+    if (boss.x < player.x) {
+        player.velocityX = 12; // 오른쪽으로 강하게 밀어내기
+    } else {
+        player.velocityX = -12; // 왼쪽으로 강하게 밀어내기
+    }
+    
+    // 플레이어 피격 효과음 재생
+    if (window.audioSystem && window.audioSystem.playPlayerHitSound) {
+        window.audioSystem.playPlayerHitSound();
+    }
+    
+    console.log(`💀 ${boss.type} 접촉 데미지! 데미지: ${damage} (난이도: ${difficultyMultiplier.toFixed(1)}x)`);
 }
 
 // 적 공격 함수
@@ -998,6 +1068,11 @@ function enemyAttack(enemy) {
         player.velocityX = 8; // 오른쪽으로 밀어내기
     } else {
         player.velocityX = -8; // 왼쪽으로 밀어내기
+    }
+    
+    // 플레이어 피격 효과음 재생
+    if (window.audioSystem && window.audioSystem.playPlayerHitSound) {
+        window.audioSystem.playPlayerHitSound();
     }
     
     console.log(`${enemy.type}의 공격! 데미지: ${damage}`);
@@ -1149,12 +1224,23 @@ function nextStage() {
     stageComplete = false;
     stageTimer = 0;
     
-    // 보스 관련 플래그 리셋
+    // 보스 관련 플래그 및 데이터 완전 정리
     window.bossSpawned = false;
     window.currentStageBossData = null;
     
+    // 보스 미사일들 완전 제거
+    if (window.bossProjectiles) {
+        window.bossProjectiles.length = 0;
+        console.log(`🗑️ 보스 미사일 배열 완전 정리`);
+    }
+    
+    // 보스 관련 전역 변수들 정리
+    if (typeof window.forceSpawnBoss === 'function') {
+        delete window.forceSpawnBoss;
+    }
+    
     console.log(`스테이지 ${currentStage} 시작! (${PLANET_THEMES[currentPlanet].name})`);
-    console.log(`🔄 보스 플래그 리셋 완료: bossSpawned=${window.bossSpawned}, currentStageBossData=${!!window.currentStageBossData}`);
+    console.log(`🔄 보스 데이터 완전 정리 완료: bossSpawned=${window.bossSpawned}, currentStageBossData=${!!window.currentStageBossData}, bossProjectiles=${window.bossProjectiles ? window.bossProjectiles.length : 0}개`);
     
     // 플레이어 위치 재설정
     player.x = 100;
@@ -1834,6 +1920,95 @@ function checkAndSpawnBoss() {
     }
 }
 
+// 보스 레이저 공격 생성 함수
+function createBossLaser(boss) {
+    const laser = {
+        x: boss.x + boss.width/2 - 2,
+        y: boss.y + boss.height/2,
+        width: 4,
+        height: 800,
+        velocityX: 0,
+        velocityY: 8, // 아래쪽으로 빠르게 이동
+        damage: Math.floor(30 * getBossDifficultyMultiplier()), // 스테이지별 데미지 증가
+        type: 'boss_laser',
+        isBossProjectile: true
+    };
+    
+    // 레이저 파티클 효과
+    for (let i = 0; i < 15; i++) {
+        createParticle(
+            laser.x + Math.random() * 4,
+            laser.y + Math.random() * 100,
+            '#FF0000', // 빨간색 레이저
+            (Math.random() - 0.5) * 2,
+            Math.random() * 3
+        );
+    }
+    
+    // 레이저 효과음 재생
+    if (window.audioSystem && window.audioSystem.playMagicSound) {
+        window.audioSystem.playMagicSound();
+    }
+    
+    // 보스 미사일 배열에 추가
+    if (!window.bossProjectiles) {
+        window.bossProjectiles = [];
+    }
+    window.bossProjectiles.push(laser);
+    
+    console.log(`🔴 ${boss.type} 레이저 공격! 데미지: ${laser.damage}`);
+}
+
+// 보스 미사일 공격 생성 함수
+function createBossMissile(boss) {
+    // 플레이어 방향으로 미사일 발사
+    const playerDirection = player.x > boss.x ? 1 : -1;
+    const missileSpeed = 6 + Math.random() * 2; // 6-8 속도
+    
+    const missile = {
+        x: boss.x + boss.width/2 - 8,
+        y: boss.y + boss.height/2,
+        width: 16,
+        height: 16,
+        velocityX: playerDirection * missileSpeed,
+        velocityY: (Math.random() - 0.5) * 4, // 약간의 랜덤한 수직 움직임
+        damage: Math.floor(25 * getBossDifficultyMultiplier()), // 스테이지별 데미지 증가
+        type: 'boss_missile',
+        isBossProjectile: true,
+        life: 180 // 3초 후 자동 소멸
+    };
+    
+    // 미사일 파티클 효과
+    for (let i = 0; i < 8; i++) {
+        createParticle(
+            missile.x + Math.random() * 16,
+            missile.y + Math.random() * 16,
+            '#FF6600', // 주황색 미사일
+            (Math.random() - 0.5) * 3,
+            (Math.random() - 0.5) * 3
+        );
+    }
+    
+    // 미사일 효과음 재생
+    if (window.audioSystem && window.audioSystem.playMagicSound) {
+        window.audioSystem.playMagicSound();
+    }
+    
+    // 보스 미사일 배열에 추가
+    if (!window.bossProjectiles) {
+        window.bossProjectiles = [];
+    }
+    window.bossProjectiles.push(missile);
+    
+    console.log(`🚀 ${boss.type} 미사일 공격! 데미지: ${missile.damage}`);
+}
+
+// 보스 난이도 계수 계산 함수
+function getBossDifficultyMultiplier() {
+    const currentStage = window.currentStage || 1;
+    return 1 + (currentStage - 1) * 0.3; // 스테이지마다 30%씩 강해짐
+}
+
 // 폭발 효과 생성 함수
 function createExplosion(x, y, radius) {
     // 폭발 파티클 생성
@@ -1852,6 +2027,78 @@ function createExplosion(x, y, radius) {
     }
     
     console.log(`💥 폭발 효과 생성: (${x}, ${y}), 반지름: ${radius}`);
+}
+
+// 보스 미사일 업데이트 및 충돌 처리 함수
+function updateBossProjectiles() {
+    // 보스 미사일이 없거나 스테이지가 완료된 경우 업데이트하지 않음
+    if (!window.bossProjectiles || window.bossProjectiles.length === 0) {
+        return;
+    }
+    
+    // 스테이지 완료 상태 확인
+    if (typeof stageComplete !== 'undefined' && stageComplete) {
+        return;
+    }
+    
+    // 보스 스폰 플래그 확인
+    if (typeof window.bossSpawned !== 'undefined' && !window.bossSpawned) {
+        return;
+    }
+    
+    for (let i = window.bossProjectiles.length - 1; i >= 0; i--) {
+        const projectile = window.bossProjectiles[i];
+        
+        // 미사일 이동
+        projectile.x += projectile.velocityX;
+        projectile.y += projectile.velocityY;
+        
+        // 수명 감소
+        if (projectile.life) {
+            projectile.life--;
+            if (projectile.life <= 0) {
+                window.bossProjectiles.splice(i, 1);
+                continue;
+            }
+        }
+        
+        // 화면 밖으로 나가면 제거
+        if (projectile.y > canvas.height + 100 || 
+            projectile.x < cameraX - 100 || 
+            projectile.x > cameraX + canvas.width + 100) {
+            window.bossProjectiles.splice(i, 1);
+            continue;
+        }
+        
+        // 플레이어와의 충돌 체크
+        if (player.x < projectile.x + projectile.width &&
+            player.x + player.width > projectile.x &&
+            player.y < projectile.y + projectile.height &&
+            player.y + player.height > projectile.y) {
+            
+            if (!player.invincible) {
+                // 보스 미사일로 인한 데미지
+                takeDamage(projectile.damage);
+                
+                // 충돌 파티클 생성
+                createParticle(
+                    projectile.x + projectile.width/2,
+                    projectile.y + projectile.height/2,
+                    '#FF0000'
+                );
+                
+                // 보스 미사일 제거
+                window.bossProjectiles.splice(i, 1);
+                
+                // 피격 효과음 재생
+                if (window.audioSystem && window.audioSystem.playPlayerHitSound) {
+                    window.audioSystem.playPlayerHitSound();
+                }
+                
+                console.log(`💥 보스 ${projectile.type} 공격으로 데미지 ${projectile.damage} 받음!`);
+            }
+        }
+    }
 }
 
 // 보스 등장 강제 테스트 함수 (디버깅용)

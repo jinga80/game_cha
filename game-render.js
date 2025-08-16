@@ -394,10 +394,22 @@ function renderEnemies() {
             
             // 보스 특별 렌더링 (디아블로 스타일의 무서운 보스)
             if (enemy.isBoss) {
-                // 보스 렌더링 전 추가 안전 체크
-                if (!isFinite(enemy.health) || !isFinite(enemy.maxHealth) || enemy.maxHealth <= 0) {
-                    console.warn('⚠️ 보스 체력 데이터 오류:', {health: enemy.health, maxHealth: enemy.maxHealth});
+                // 보스 렌더링 전 추가 안전 체크 (체력, 스테이지 완료 상태 등)
+                if (!isFinite(enemy.health) || !isFinite(enemy.maxHealth) || enemy.maxHealth <= 0 || enemy.health <= 0) {
+                    console.warn('⚠️ 보스 체력 데이터 오류 또는 사망:', {health: enemy.health, maxHealth: enemy.maxHealth});
                     return; // 이 보스는 건너뛰기
+                }
+                
+                // 스테이지가 완료되었거나 보스가 이미 죽은 경우 렌더링하지 않음
+                if (typeof stageComplete !== 'undefined' && stageComplete) {
+                    console.log('🏆 스테이지 완료 상태: 보스 렌더링 건너뛰기');
+                    return;
+                }
+                
+                // 보스 스폰 플래그 확인
+                if (typeof window.bossSpawned !== 'undefined' && !window.bossSpawned) {
+                    console.log('🚫 보스 스폰 플래그 false: 보스 렌더링 건너뛰기');
+                    return;
                 }
                 
                 // 보스 y좌표 추가 검증
@@ -627,6 +639,84 @@ function renderParticles() {
         }
     });
     ctx.globalAlpha = 1;
+}
+
+// 보스 미사일 렌더링 함수
+function renderBossProjectiles() {
+    // 보스 미사일이 없거나 스테이지가 완료된 경우 렌더링하지 않음
+    if (!window.bossProjectiles || window.bossProjectiles.length === 0) {
+        return;
+    }
+    
+    // 스테이지 완료 상태 확인
+    if (typeof stageComplete !== 'undefined' && stageComplete) {
+        return;
+    }
+    
+    // 보스 스폰 플래그 확인
+    if (typeof window.bossSpawned !== 'undefined' && !window.bossSpawned) {
+        return;
+    }
+    
+    window.bossProjectiles.forEach(projectile => {
+        const x = projectile.x - cameraX;
+        
+        // 화면 밖의 미사일은 렌더링하지 않음
+        if (x < -50 || x > canvas.width + 50 || 
+            projectile.y < -50 || projectile.y > canvas.height + 50) {
+            return;
+        }
+        
+        if (projectile.type === 'boss_laser') {
+            // 레이저 렌더링
+            const gradient = ctx.createLinearGradient(x, projectile.y, x, projectile.y + projectile.height);
+            gradient.addColorStop(0, '#FF0000');
+            gradient.addColorStop(0.5, '#FF6666');
+            gradient.addColorStop(1, '#FF0000');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, projectile.y, projectile.width, projectile.height);
+            
+            // 레이저 글로우 효과
+            ctx.shadowColor = '#FF0000';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(x, projectile.y, projectile.width, projectile.height);
+            ctx.shadowBlur = 0;
+            
+            // 레이저 테두리
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, projectile.y, projectile.width, projectile.height);
+            
+        } else if (projectile.type === 'boss_missile') {
+            // 미사일 렌더링
+            const gradient = ctx.createRadialGradient(
+                x + projectile.width/2, projectile.y + projectile.height/2, 0,
+                x + projectile.width/2, projectile.y + projectile.height/2, projectile.width/2
+            );
+            gradient.addColorStop(0, '#FF6600');
+            gradient.addColorStop(0.7, '#FF4400');
+            gradient.addColorStop(1, '#CC3300');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x + projectile.width/2, projectile.y + projectile.height/2, projectile.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 미사일 테두리
+            ctx.strokeStyle = '#FF8800';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 미사일 꼬리 효과
+            ctx.fillStyle = 'rgba(255, 102, 0, 0.6)';
+            ctx.beginPath();
+            ctx.arc(x + projectile.width/2 - projectile.velocityX * 2, 
+                   projectile.y + projectile.height/2 - projectile.velocityY * 2, 
+                   projectile.width/3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
 }
 
 // 플레이어 렌더링 (HD2D 스타일)
