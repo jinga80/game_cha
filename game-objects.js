@@ -991,14 +991,21 @@ function updateEnemies() {
             player.y < enemy.y + enemy.height &&
             player.y + player.height > enemy.y) {
             
-            if (!player.attacking && !player.invincible && enemy.attackCooldown <= 0) {
-                // 보스인 경우 더 강한 접촉 데미지
-                if (enemy.isBoss) {
+            // 보스인 경우 더 강한 접촉 데미지 (공격 중에도 데미지, 무적 상태가 아닐 때만)
+            if (enemy.isBoss && !player.invincible) {
+                // 보스 접촉은 쿨다운과 관계없이 데미지 적용 (더 강력하게!)
+                if (enemy.attackCooldown <= 0) {
+                    console.log(`💥 보스와 충돌 감지! ${enemy.type} at (${enemy.x}, ${enemy.y})`);
+                    console.log(`🔍 플레이어 위치: (${player.x}, ${player.y}), 무적 상태: ${player.invincible}, 쿨다운: ${enemy.attackCooldown}`);
                     bossContactDamage(enemy);
                 } else {
-                    // 일반 적이 플레이어를 공격
-                    enemyAttack(enemy);
+                    // 쿨다운 중이어도 약한 데미지는 적용
+                    console.log(`💥 보스와 접촉 중 (쿨다운: ${enemy.attackCooldown})`);
+                    takeDamage(20); // 기본 20 데미지
                 }
+            } else if (!enemy.isBoss && !player.attacking && !player.invincible && enemy.attackCooldown <= 0) {
+                // 일반 적이 플레이어를 공격
+                enemyAttack(enemy);
             }
         }
         
@@ -1017,32 +1024,32 @@ function updateEnemies() {
 // 보스 접촉 데미지 함수
 function bossContactDamage(boss) {
     // 보스 접촉 쿨다운 설정 (더 짧게)
-    boss.attackCooldown = 60; // 1초 (60fps 기준)
+    boss.attackCooldown = 30; // 1초 → 0.5초로 단축 (60fps 기준)
     
-    // 보스 접촉 데미지 (스테이지별로 증가)
-    const baseDamage = 40; // 기본 40 데미지
+    // 보스 접촉 데미지 (스테이지별로 증가) - 더 강하게!
+    const baseDamage = 60; // 기본 40 → 60으로 증가
     const difficultyMultiplier = getBossDifficultyMultiplier();
     const damage = Math.floor(baseDamage * difficultyMultiplier);
     
     // 플레이어에게 데미지 적용
     takeDamage(damage);
     
-    // 강력한 접촉 파티클 생성
-    for (let i = 0; i < 15; i++) {
+    // 강력한 접촉 파티클 생성 (더 많이!)
+    for (let i = 0; i < 25; i++) { // 15 → 25로 증가
         createParticle(
-            player.x + player.width/2 + (Math.random() - 0.5) * 50,
-            player.y + player.height/2 + (Math.random() - 0.5) * 50,
+            player.x + player.width/2 + (Math.random() - 0.5) * 80, // 50 → 80으로 증가
+            player.y + player.height/2 + (Math.random() - 0.5) * 80,
             '#FF0000', // 빨간색
-            (Math.random() - 0.5) * 10,
-            (Math.random() - 0.5) * 10
+            (Math.random() - 0.5) * 15, // 10 → 15로 증가
+            (Math.random() - 0.5) * 15
         );
     }
     
-    // 플레이어를 강하게 밀어내기
+    // 플레이어를 더 강하게 밀어내기
     if (boss.x < player.x) {
-        player.velocityX = 12; // 오른쪽으로 강하게 밀어내기
+        player.velocityX = 15; // 12 → 15로 증가
     } else {
-        player.velocityX = -12; // 왼쪽으로 강하게 밀어내기
+        player.velocityX = -15; // -12 → -15로 증가
     }
     
     // 플레이어 피격 효과음 재생
@@ -1050,7 +1057,13 @@ function bossContactDamage(boss) {
         window.audioSystem.playPlayerHitSound();
     }
     
+    // 보스 접촉 효과음 재생
+    if (window.audioSystem && window.audioSystem.playBossIntroSound) {
+        window.audioSystem.playBossIntroSound();
+    }
+    
     console.log(`💀 ${boss.type} 접촉 데미지! 데미지: ${damage} (난이도: ${difficultyMultiplier.toFixed(1)}x)`);
+    console.log(`🔍 보스 위치: (${boss.x}, ${boss.y}), 플레이어 위치: (${player.x}, ${player.y})`);
 }
 
 // 적 공격 함수
