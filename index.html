@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 재미있는게임 v1.6 - 커비 스타일 100스테이지 행성 어드벤처</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 게임 캔버스 -->
+        <canvas id="gameCanvas" width="1920" height="1080"></canvas>
+        
+        <!-- 버전 정보 -->
+        <div class="version-info">v1.6</div>
+        
+        <!-- 전체화면 토글 버튼 -->
+        <button id="fullscreenToggle" class="fullscreen-toggle">⛶</button>
+        
+        <!-- 게임 시작 화면 -->
+        <div id="startScreen" class="game-screen">
+            <div class="game-title">
+                <h1>🎮 재미있는게임 🎮</h1>
+                <p class="subtitle">진건우 제작</p>
+            </div>
+            
+            <div class="menu-buttons">
+                <button id="startButton" class="menu-button primary">게임 시작</button>
+                <button id="storyModeButton" class="menu-button secondary">📖 스토리 모드</button>
+                <button id="controlGuideButton" class="menu-button secondary">조작법 보기</button>
+            </div>
+            
+            <div class="game-info">
+                <p>🎯 3단 점프 • 🚀 대시 기능 • ⚔️ 연속 공격</p>
+                <p>🎨 HD2D 그래픽 • 🌍 100스테이지 • 🎮 PC 최적화</p>
+                <p>🎵 고급 오디오 시스템 • 🎮 스테이지별 난이도 조절</p>
+            </div>
+        </div>
+        
+        <!-- 캐릭터 선택 화면 -->
+        <div id="characterSelectScreen" class="game-screen" style="display: none;">
+            <div class="screen-title">
+                <h2>🎭 캐릭터 선택</h2>
+                <p>플레이할 캐릭터를 선택하세요</p>
+            </div>
+            
+            <div class="character-grid">
+                <div class="character-card" data-character="기본">
+                    <div class="character-avatar">👤</div>
+                    <h3>기본</h3>
+                    <p>균형잡힌 능력치</p>
+                    <div class="character-stats">
+                        <span>❤️ 300</span>
+                        <span>⚔️ 50</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="검사">
+                    <div class="character-avatar">⚔️</div>
+                    <h3>검사</h3>
+                    <p>높은 공격력</p>
+                    <div class="character-stats">
+                        <span>❤️ 250</span>
+                        <span>⚔️ 80</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="궁수">
+                    <div class="character-avatar">🏹</div>
+                    <h3>궁수</h3>
+                    <p>원거리 공격</p>
+                    <div class="character-stats">
+                        <span>❤️ 200</span>
+                        <span>⚔️ 60</span>
+                        <span>🚀 7</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="망치전문가">
+                    <div class="character-avatar">🔨</div>
+                    <h3>망치전문가</h3>
+                    <p>파괴의 달인</p>
+                    <div class="character-stats">
+                        <span>❤️ 350</span>
+                        <span>⚔️ 90</span>
+                        <span>🚀 4</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="폭탄전문가">
+                    <div class="character-avatar">💣</div>
+                    <h3>폭탄전문가</h3>
+                    <p>폭발 전문가</p>
+                    <div class="character-stats">
+                        <span>❤️ 180</span>
+                        <span>⚔️ 100</span>
+                        <span>🚀 8</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="미사일발사달인">
+                    <div class="character-avatar">🚀</div>
+                    <h3>미사일발사달인</h3>
+                    <p>정밀 타격</p>
+                    <div class="character-stats">
+                        <span>❤️ 220</span>
+                        <span>⚔️ 85</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="풍선">
+                    <div class="character-avatar">🎈</div>
+                    <h3>풍선</h3>
+                    <p>가벼운 몸</p>
+                    <div class="character-stats">
+                        <span>❤️ 150</span>
+                        <span>⚔️ 40</span>
+                        <span>🚀 9</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="왕">
+                    <div class="character-avatar">👑</div>
+                    <h3>왕</h3>
+                    <p>왕의 권위</p>
+                    <div class="character-stats">
+                        <span>❤️ 400</span>
+                        <span>⚔️ 70</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="스피어맨">
+                    <div class="character-avatar">🔱</div>
+                    <h3>스피어맨</h3>
+                    <p>창술 달인</p>
+                    <div class="character-stats">
+                        <span>❤️ 280</span>
+                        <span>⚔️ 75</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="어둠의마법사">
+                    <div class="character-avatar">🌑</div>
+                    <h3>어둠의마법사</h3>
+                    <p>어둠의 힘</p>
+                    <div class="character-stats">
+                        <span>❤️ 200</span>
+                        <span>⚔️ 95</span>
+                        <span>🚀 5</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="마법사">
+                    <div class="character-avatar">🔮</div>
+                    <h3>마법사</h3>
+                    <p>마법 전문가</p>
+                    <div class="character-stats">
+                        <span>❤️ 180</span>
+                        <span>⚔️ 90</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="발키리">
+                    <div class="character-avatar">🛡️</div>
+                    <h3>발키리</h3>
+                    <p>신의 힘</p>
+                    <div class="character-stats">
+                        <span>❤️ 400</span>
+                        <span>⚔️ 45</span>
+                        <span>🚀 6</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="방패맨">
+                    <div class="character-avatar">🛡️</div>
+                    <h3>방패맨</h3>
+                    <p>철벽 방어</p>
+                    <div class="character-stats">
+                        <span>❤️ 450</span>
+                        <span>⚔️ 35</span>
+                        <span>🚀 4</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="거인">
+                    <div class="character-avatar">👹</div>
+                    <h3>거인</h3>
+                    <p>거대한 힘</p>
+                    <div class="character-stats">
+                        <span>❤️ 500</span>
+                        <span>⚔️ 40</span>
+                        <span>🚀 3</span>
+                    </div>
+                </div>
+                
+                <div class="character-card" data-character="미사일">
+                    <div class="character-avatar">🚀</div>
+                    <h3>미사일</h3>
+                    <p>초고속</p>
+                    <div class="character-stats">
+                        <span>❤️ 120</span>
+                        <span>⚔️ 60</span>
+                        <span>🚀 10</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="difficulty-selector">
+                <h3>🎯 난이도 선택</h3>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="쉬움">쉬움</button>
+                    <button class="difficulty-btn active" data-difficulty="보통">보통</button>
+                    <button class="difficulty-btn" data-difficulty="어려움">어려움</button>
+                </div>
+            </div>
+            
+            <div class="menu-buttons">
+                <button id="backToStartButton" class="menu-button secondary">뒤로 가기</button>
+                <button id="startGameButton" class="menu-button primary">게임 시작</button>
+            </div>
+            
+            <!-- BGM 테스트 버튼들 -->
+            <div style="margin-top: 20px; text-align: center;">
+              <button onclick="playTitleBGM()" style="padding: 8px 16px; margin: 5px; border-radius: 6px; background: #4CAF50; color: white; border: none; cursor: pointer; font-size: 12px;">
+                🎵 타이틀 BGM
+              </button>
+              <button onclick="playYoungCollegeBGM()" style="padding: 8px 16px; margin: 5px; border-radius: 6px; background: #2196F3; color: white; border: none; cursor: pointer; font-size: 12px;">
+                🎵 젊은 음악 대학
+              </button>
+              <button onclick="playFallsRodeBGM()" style="padding: 8px 16px; margin: 5px; border-radius: 6px; background: #FF9800; color: white; border: none; cursor: pointer; font-size: 12px;">
+                🎵 폭포 길
+              </button>
+              <button onclick="stopBGM()" style="padding: 8px 16px; margin: 5px; border-radius: 6px; background: #f44336; color: white; border: none; cursor: pointer; font-size: 12px;">
+                ⏹️ BGM 중지
+              </button>
+            </div>
+        </div>
+        
+        <!-- 게임 UI -->
+        <div id="gameUI" class="game-ui" style="display: none;">
+            <!-- 상단 정보 바 -->
+            <div class="top-info-bar">
+                <div class="info-item">
+                    <span class="label">스테이지:</span>
+                    <span id="stageDisplay" class="value">1</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="label">점수:</span>
+                    <span id="scoreDisplay" class="value">0</span>
+                </div>
+                
+                <div class="info-item">
+                    <span class="label">생명:</span>
+                    <div id="heartsContainer" class="hearts"></div>
+                </div>
+            </div>
+            
+            <!-- 체력바 -->
+            <div class="health-bar-container">
+                <div class="health-bar">
+                    <div id="healthFill" class="health-fill"></div>
+                </div>
+                <span id="healthDisplay" class="health-text">300</span>
+            </div>
+            
+            <!-- 게임 컨트롤 -->
+            <div class="game-controls">
+                <button id="pauseButton" class="control-btn">⏸️</button>
+                <button id="restartButton" class="control-btn">🔄</button>
+            </div>
+        </div>
+        
+        <!-- 게임 오버 화면 -->
+        <div id="gameOverScreen" class="game-screen" style="display: none;">
+            <div class="game-over-content">
+                <h2>💀 게임 오버</h2>
+                <div class="final-stats">
+                    <p>최종 점수: <span id="finalScore">0</span></p>
+                    <p>도달 스테이지: <span id="finalStage">1</span></p>
+                </div>
+                <div class="menu-buttons">
+                    <button id="restartButton" class="menu-button primary">다시 시작</button>
+                    <button id="backToMenuButton" class="menu-button secondary">메인 메뉴</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 스크립트 -->
+    <script src="audio-system.js"></script>
+    <script src="story-data.js"></script>
+    <script src="story-system.js"></script>
+    <script src="game-objects.js"></script>
+    <script src="game-core.js"></script>
+    <script src="game-render.js"></script>
+    <script src="game.js"></script>
+    
+    <script>
+        // 캐릭터 선택 시스템
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('startButton');
+            const storyModeButton = document.getElementById('storyModeButton');
+            const characterSelectScreen = document.getElementById('characterSelectScreen');
+            const startScreen = document.getElementById('startScreen');
+            const characterCards = document.querySelectorAll('.character-card');
+            const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+            const startGameButton = document.getElementById('startGameButton');
+            const backToStartButton = document.getElementById('backToStartButton');
+            const backToMenuButton = document.getElementById('backToMenuButton');
+            
+            // 게임 시작 버튼 클릭
+            startButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (window.audioSystem && window.audioSystem.playMenuConfirmSound) {
+                    window.audioSystem.playMenuConfirmSound();
+                }
+                
+                startScreen.style.display = 'none';
+                characterSelectScreen.style.display = 'block';
+            });
+            
+            // 스토리 모드 버튼 클릭
+            storyModeButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (window.audioSystem && window.audioSystem.playMenuConfirmSound) {
+                    window.audioSystem.playMenuConfirmSound();
+                }
+                
+                if (typeof startStoryMode === 'function') {
+                    startStoryMode();
+                } else {
+                    alert('스토리 모드가 준비 중입니다.');
+                }
+            });
+            
+            // 뒤로 가기 버튼 클릭
+            backToStartButton.addEventListener('click', function() {
+                // 메뉴 선택 효과음 재생
+                if (window.audioSystem && window.audioSystem.playMenuSelectSound) {
+                    window.audioSystem.playMenuSelectSound();
+                }
+                
+                characterSelectScreen.style.display = 'none';
+                startScreen.style.display = 'block';
+            });
+            
+            // 메인 메뉴로 돌아가기
+            backToMenuButton.addEventListener('click', function() {
+                location.reload();
+            });
+            
+            // 캐릭터 선택
+            characterCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // 기존 선택 해제
+                    characterCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // 현재 캐릭터 선택
+                    this.classList.add('selected');
+                    selectedCharacter = this.dataset.character;
+                    
+                    console.log('선택된 캐릭터:', selectedCharacter);
+                });
+            });
+            
+            // 난이도 선택
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 기존 선택 해제
+                    difficultyButtons.forEach(b => b.classList.remove('active'));
+                    
+                    // 현재 난이도 선택
+                    this.classList.add('active');
+                    gameDifficulty = this.dataset.difficulty;
+                    
+                    console.log('선택된 난이도:', gameDifficulty);
+                });
+            });
+            
+            // 게임 시작 버튼 클릭
+            startGameButton.addEventListener('click', function() {
+                if (!selectedCharacter) {
+                    alert('캐릭터를 선택해주세요!');
+                    return;
+                }
+                
+                // 메뉴 선택 효과음 재생
+                if (window.audioSystem && window.audioSystem.playMenuConfirmSound) {
+                    window.audioSystem.playMenuConfirmSound();
+                }
+                
+                // 게임 시작
+                startGame();
+            });
+            
+                    // 일시정지 버튼
+        const pauseButton = document.getElementById('pauseButton');
+        if (pauseButton) {
+            pauseButton.addEventListener('click', function() {
+                togglePause();
+            });
+        }
+        
+        // 스토리 시스템과 오디오 시스템 초기화
+        if (typeof initStorySystem === 'function') {
+            initStorySystem();
+        }
+        if (typeof initAudioSystem === 'function') {
+            initAudioSystem();
+            
+            // 오디오 시스템 상태 확인
+            setTimeout(() => {
+                if (window.audioSystem) {
+                    console.log('✅ 오디오 시스템 초기화 완료:', window.audioSystem);
+                    console.log('🎵 사용 가능한 BGM 함수들:', {
+                        playTitleBGM: typeof playTitleBGM,
+                        playYoungCollegeBGM: typeof playYoungCollegeBGM,
+                        playFallsRodeBGM: typeof playFallsRodeBGM,
+                        stopBGM: typeof stopBGM
+                    });
+                    
+                    // 사용자 상호작용 후 BGM 재생 준비
+                    console.log('💡 BGM 테스트 버튼을 클릭하여 음악을 재생하세요!');
+                } else {
+                    console.log('❌ 오디오 시스템이 초기화되지 않았습니다');
+                }
+            }, 1000);
+        }
+    });
+    </script>
+    
+
+</body>
+</html> 

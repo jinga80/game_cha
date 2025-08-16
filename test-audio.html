@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 BGM 시스템 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .bgm-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .bgm-button {
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .bgm-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .bgm-button.young-college {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+        .bgm-button.falls-rode {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+        .bgm-button.stop {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-family: monospace;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .volume-control {
+            margin: 10px;
+            display: inline-block;
+        }
+        .volume-control label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .volume-control input[type="range"] {
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 BGM 시스템 테스트</h1>
+        
+        <div class="status" id="status">
+            상태: 오디오 시스템 로딩 중...
+        </div>
+        
+        <div class="bgm-buttons">
+            <button class="bgm-button" onclick="playTitleBGM()">
+                🎵 타이틀 BGM<br>
+                <small>PUFF AND MAGIC DRAGON</small>
+            </button>
+            
+            <button class="bgm-button young-college" onclick="playYoungCollegeBGM()">
+                🎵 젊은 음악 대학<br>
+                <small>A young music college</small>
+            </button>
+            
+            <button class="bgm-button falls-rode" onclick="playFallsRodeBGM()">
+                🎵 폭포 길<br>
+                <small>Falls rode</small>
+            </button>
+            
+            <button class="bgm-button stop" onclick="stopBGM()">
+                ⏹️ BGM 중지
+            </button>
+        </div>
+        
+        <div class="controls">
+            <div class="volume-control">
+                <label>🔊 마스터 볼륨</label>
+                <input type="range" min="0" max="1" step="0.1" value="0.7" 
+                       onchange="setMasterVolume(this.value)">
+                <span id="masterVolume">70%</span>
+            </div>
+            
+            <div class="volume-control">
+                <label>🎵 BGM 볼륨</label>
+                <input type="range" min="0" max="1" step="0.1" value="0.5" 
+                       onchange="setBGMVolume(this.value)">
+                <span id="bgmVolume">50%</span>
+            </div>
+        </div>
+        
+        <div class="status" id="debug">
+            디버그 정보가 여기에 표시됩니다...
+        </div>
+    </div>
+
+    <script src="audio-system.js"></script>
+    <script>
+        // 상태 업데이트 함수
+        function updateStatus(message) {
+            document.getElementById('status').textContent = '상태: ' + message;
+        }
+        
+        function updateDebug(message) {
+            document.getElementById('debug').textContent = '디버그: ' + message;
+        }
+        
+        // 볼륨 표시 업데이트
+        function updateVolumeDisplay() {
+            if (audioSystem) {
+                document.getElementById('masterVolume').textContent = 
+                    Math.round(audioSystem.masterVolume * 100) + '%';
+                document.getElementById('bgmVolume').textContent = 
+                    Math.round(audioSystem.bgmVolume * 100) + '%';
+            }
+        }
+        
+        // 마스터 볼륨 설정
+        function setMasterVolume(value) {
+            if (audioSystem) {
+                audioSystem.setMasterVolume(value);
+                updateVolumeDisplay();
+            }
+        }
+        
+        // BGM 볼륨 설정
+        function setBGMVolume(value) {
+            if (audioSystem) {
+                audioSystem.setBGMVolume(value);
+                updateVolumeDisplay();
+            }
+        }
+        
+        // 페이지 로드 시 오디오 시스템 초기화
+        window.addEventListener('load', function() {
+            updateStatus('페이지 로드 완료, 오디오 시스템 초기화 중...');
+            
+            if (typeof initAudioSystem === 'function') {
+                initAudioSystem();
+                updateStatus('오디오 시스템 초기화 완료!');
+                
+                // 2초 후 자동으로 타이틀 BGM 재생
+                setTimeout(() => {
+                    if (typeof playTitleBGM === 'function') {
+                        playTitleBGM();
+                        updateStatus('타이틀 BGM 자동 재생 시작!');
+                        updateDebug('PUFF AND MAGIC DRAGON.m4a 재생 중...');
+                    } else {
+                        updateStatus('playTitleBGM 함수를 찾을 수 없습니다');
+                    }
+                }, 2000);
+                
+                // 볼륨 표시 업데이트
+                setInterval(updateVolumeDisplay, 1000);
+                
+            } else {
+                updateStatus('initAudioSystem 함수를 찾을 수 없습니다');
+            }
+        });
+        
+        // 전역 함수들 재정의 (상태 업데이트 포함)
+        const originalPlayTitleBGM = window.playTitleBGM;
+        window.playTitleBGM = function() {
+            updateStatus('타이틀 BGM 재생 시작!');
+            updateDebug('PUFF AND MAGIC DRAGON.m4a');
+            if (originalPlayTitleBGM) {
+                originalPlayTitleBGM();
+            }
+        };
+        
+        const originalPlayYoungCollegeBGM = window.playYoungCollegeBGM;
+        window.playYoungCollegeBGM = function() {
+            updateStatus('젊은 음악 대학 BGM 재생 시작!');
+            updateDebug('A young music college.m4a');
+            if (originalPlayYoungCollegeBGM) {
+                originalPlayYoungCollegeBGM();
+            }
+        };
+        
+        const originalPlayFallsRodeBGM = window.playFallsRodeBGM;
+        window.playFallsRodeBGM = function() {
+            updateStatus('폭포 길 BGM 재생 시작!');
+            updateDebug('Falls rode.m4a');
+            if (originalPlayFallsRodeBGM) {
+                originalPlayFallsRodeBGM();
+            }
+        };
+        
+        const originalStopBGM = window.stopBGM;
+        window.stopBGM = function() {
+            updateStatus('BGM 중지됨');
+            updateDebug('모든 BGM이 중지되었습니다');
+            if (originalStopBGM) {
+                originalStopBGM();
+            }
+        };
+    </script>
+</body>
+</html>

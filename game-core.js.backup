@@ -1,0 +1,1975 @@
+// ========================================
+// 게임 핵심 로직 (game-core.js) - 보스 시스템 및 대형 미사일 구현 버전
+// ========================================
+
+// 게임 상태 관리
+let gameRunning = false;
+let gamePaused = false;
+let score = 0;
+let lives = 5;
+let currentStage = 1;
+let currentPlanet = 1; // 현재 행성 (1-5)
+let isFullscreen = false;
+let selectedCharacter = '기본'; // 선택된 캐릭터
+let gameDifficulty = '보통'; // 게임 난이도
+let isDashing = false; // 대시 상태
+let bossStage = false; // 보스 스테이지 여부
+let bossDefeated = false; // 보스 처치 여부
+
+// 시간 시스템
+let gameTime = 0; // 게임 시작 후 경과 시간 (초)
+let isNightMode = false; // 저녁 모드 여부
+let nightModeTimer = 0; // 저녁 모드 지속 시간
+let lastTimeTransition = 0; // 마지막 시간 전환 시점
+
+// 게임 설정
+const GRAVITY = 0.8;
+const JUMP_POWER = 18;
+const MOVE_SPEED = 6;
+const DASH_SPEED = 12; // 대시 속도
+const STAGE_WIDTH = 8000; // 맵 크기 대폭 증가
+
+// 캐릭터 능력치 정의
+const CHARACTER_STATS = {
+    '기본': {
+        health: 300,
+        attackPower: 50,
+        speed: 6,
+        jumpPower: 18
+    },
+    '검사': {
+        health: 250,
+        attackPower: 80,
+        speed: 5,
+        jumpPower: 16
+    },
+    '궁수': {
+        health: 200,
+        attackPower: 60,
+        speed: 7,
+        jumpPower: 20
+    },
+    '망치전문가': {
+        health: 350,
+        attackPower: 90,
+        speed: 4,
+        jumpPower: 15
+    },
+    '폭탄전문가': {
+        health: 180,
+        attackPower: 100,
+        speed: 8,
+        jumpPower: 22
+    }
+};
+
+// 게임 객체 배열들
+let platforms = [];
+let enemies = [];
+let coins = [];
+let particles = [];
+let explosions = [];
+let cameraX = 0;
+let stageProgress = 0;
+let stageComplete = false;
+
+// 플레이어 객체
+let player = {
+    x: 100,
+    y: 800,
+    width: 40,
+    height: 60,
+    velocityX: 0,
+    velocityY: 0,
+    health: 300,
+    maxHealth: 300,
+    attackPower: 50,
+    speed: 6,
+    jumpPower: 18,
+    character: '기본',
+    attacking: false,
+    attackCooldown: 0,
+    invincible: false,
+    invincibleTime: 0,
+    onGround: false,
+    jumping: false,
+    jumpCount: 0,
+    direction: 1,
+    projectiles: []
+};
+
+// 난이도 설정
+const DIFFICULTY_SETTINGS = {
+    '쉬움': {
+        lives: 7,
+        playerHealth: 1.2,
+        enemyHealth: 0.8,
+        enemySpeed: 0.8,
+        enemyAttack: 0.8
+    },
+    '보통': {
+        lives: 5,
+        playerHealth: 1.0,
+        enemyHealth: 1.0,
+        enemySpeed: 1.0,
+        enemyAttack: 1.0
+    },
+    '어려움': {
+        lives: 3,
+        playerHealth: 0.8,
+        enemyHealth: 1.3,
+        enemySpeed: 1.2,
+        enemyAttack: 1.3
+    }
+};
+
+// 행성 테마 설정
+const PLANET_THEMES = {
+    1: { // 나무행성 (1-20스테이지)
+        name: '🌳 나무행성',
+        background: {
+            sky: ['#4A90E2', '#7FB3D3', '#B8D4E3', '#E8F4F8'],
+            mountains: ['#228B22', '#32CD32', '#90EE90'],
+            ground: '#8B4513',
+            platforms: '#228B22'
+        },
+        enemies: ['나무돌이', '나무왕', '포탑몬'],
+        boss: '🌳 거대나무왕',
+        stageRange: [1, 20],
+        ground: '#8B4513',
+        coin: '#FFD700'
+    },
+    2: { // 불꽃행성 (21-40스테이지)
+        name: '🔥 불꽃행성',
+        background: {
+            sky: ['#FF4500', '#FF6347', '#FF7F50', '#FFA07A'],
+            mountains: ['#8B0000', '#DC143C', '#FF1493'],
+            ground: '#8B0000',
+            platforms: '#DC143C'
+        },
+        enemies: ['불돌이', '불왕', '용암몬'],
+        boss: '🔥 거대불왕',
+        stageRange: [21, 40],
+        ground: '#8B0000',
+        coin: '#FF4500'
+    },
+    3: { // 번개행성 (41-60스테이지)
+        name: '⚡ 번개행성',
+        background: {
+            sky: ['#4169E1', '#6495ED', '#87CEEB', '#B0E0E6'],
+            mountains: ['#191970', '#483D8B', '#6A5ACD'],
+            ground: '#191970',
+            platforms: '#483D8B'
+        },
+        enemies: ['번개돌이', '번개왕', '전기몬'],
+        boss: '⚡ 거대번개왕',
+        stageRange: [41, 60],
+        ground: '#191970',
+        coin: '#4169E1'
+    },
+    4: { // 원소행성 (61-80스테이지)
+        name: '🌈 원소행성',
+        background: {
+            sky: ['#9932CC', '#BA55D3', '#DDA0DD', '#E6E6FA'],
+            mountains: ['#4B0082', '#800080', '#9370DB'],
+            ground: '#4B0082',
+            platforms: '#800080'
+        },
+        enemies: ['원소돌이', '원소왕', '마법몬'],
+        boss: '🌈 거대원소왕',
+        stageRange: [61, 80],
+        ground: '#4B0082',
+        coin: '#8A2BE2'
+    },
+    5: { // 얼음행성 (81-100스테이지)
+        name: '❄️ 얼음행성',
+        background: {
+            sky: ['#87CEEB', '#B0E0E6', '#E0FFFF', '#F0F8FF'],
+            mountains: ['#4682B4', '#5F9EA0', '#B0C4DE'],
+            ground: '#4682B4',
+            platforms: '#5F9EA0'
+        },
+        enemies: ['얼음돌이', '얼음왕', '눈사람몬'],
+        boss: '❄️ 거대얼음왕',
+        stageRange: [81, 100],
+        ground: '#4682B4',
+        coin: '#87CEEB'
+    }
+};
+
+// 14개 캐릭터 능력치 및 스킬 시스템
+const CHARACTERS = {
+    '기본': {
+        name: '기본',
+        emoji: '👤',
+        description: '균형잡힌 능력치',
+        stats: {
+            health: 300,
+            attack: 50,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '없음',
+        specialSkill: '없음'
+    },
+    '검사': {
+        name: '검사',
+        emoji: '⚔️',
+        description: '높은 공격력',
+        stats: {
+            health: 250,
+            attack: 80,
+            speed: 5,
+            jumpPower: 16
+        },
+        specialAbility: '검기 발사',
+        specialSkill: '검기 폭풍'
+    },
+    '궁수': {
+        name: '궁수',
+        emoji: '🏹',
+        description: '원거리 공격',
+        stats: {
+            health: 200,
+            attack: 60,
+            speed: 7,
+            jumpPower: 20
+        },
+        specialAbility: '화살 발사',
+        specialSkill: '화살 폭풍'
+    },
+    '망치전문가': {
+        name: '망치전문가',
+        emoji: '🔨',
+        description: '파괴의 달인',
+        stats: {
+            health: 350,
+            attack: 90,
+            speed: 4,
+            jumpPower: 14
+        },
+        specialAbility: '망치 던지기',
+        specialSkill: '지진'
+    },
+    '폭탄전문가': {
+        name: '폭탄전문가',
+        emoji: '💣',
+        description: '폭발 전문가',
+        stats: {
+            health: 180,
+            attack: 100,
+            speed: 8,
+            jumpPower: 22
+        },
+        specialAbility: '폭탄 설치',
+        specialSkill: '폭발'
+    },
+    '미사일발사달인': {
+        name: '미사일발사달인',
+        emoji: '🚀',
+        description: '정밀 타격',
+        stats: {
+            health: 220,
+            attack: 85,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '미사일 발사',
+        specialSkill: '미사일 폭격'
+    },
+    '풍선': {
+        name: '풍선',
+        emoji: '🎈',
+        description: '가벼운 몸',
+        stats: {
+            health: 150,
+            attack: 40,
+            speed: 9,
+            jumpPower: 25
+        },
+        specialAbility: '공중 부유',
+        specialSkill: '풍선 폭발'
+    },
+    '왕': {
+        name: '왕',
+        emoji: '👑',
+        description: '왕의 권위',
+        stats: {
+            health: 400,
+            attack: 70,
+            speed: 5,
+            jumpPower: 16
+        },
+        specialAbility: '왕의 명령',
+        specialSkill: '왕의 분노'
+    },
+    '스피어맨': {
+        name: '스피어맨',
+        emoji: '🔱',
+        description: '창술 달인',
+        stats: {
+            health: 280,
+            attack: 75,
+            speed: 6,
+            jumpPower: 17
+        },
+        specialAbility: '창 던지기',
+        specialSkill: '창의 폭풍'
+    },
+    '어둠의마법사': {
+        name: '어둠의마법사',
+        emoji: '🌑',
+        description: '어둠의 힘',
+        stats: {
+            health: 200,
+            attack: 95,
+            speed: 5,
+            jumpPower: 15
+        },
+        specialAbility: '어둠의 힘',
+        specialSkill: '어둠의 폭풍'
+    },
+    '마법사': {
+        name: '마법사',
+        emoji: '🔮',
+        description: '마법 전문가',
+        stats: {
+            health: 180,
+            attack: 90,
+            speed: 6,
+            jumpPower: 18
+        },
+        specialAbility: '마법 발사',
+        specialSkill: '마법 폭풍'
+    },
+    '발키리': {
+        name: '발키리',
+        emoji: '🛡️',
+        description: '신의 힘',
+        stats: {
+            health: 400,
+            attack: 45,
+            speed: 6,
+            jumpPower: 19
+        },
+        specialAbility: '신의 힘',
+        specialSkill: '신의 폭풍'
+    },
+    '방패맨': {
+        name: '방패맨',
+        emoji: '🛡️',
+        description: '철벽 방어',
+        stats: {
+            health: 450,
+            attack: 35,
+            speed: 4,
+            jumpPower: 14
+        },
+        specialAbility: '철벽 방어',
+        specialSkill: '방패 돌진'
+    },
+    '거인': {
+        name: '거인',
+        emoji: '👹',
+        description: '거대한 힘',
+        stats: {
+            health: 500,
+            attack: 40,
+            speed: 3,
+            jumpPower: 12
+        },
+        specialAbility: '거대한 힘',
+        specialSkill: '거인의 분노'
+    },
+    '미사일': {
+        name: '미사일',
+        emoji: '🚀',
+        description: '초고속',
+        stats: {
+            health: 120,
+            attack: 60,
+            speed: 10,
+            jumpPower: 28
+        },
+        specialAbility: '초고속',
+        specialSkill: '초고속 돌진'
+    }
+};
+
+// 난이도별 설정 (기존 선언과 통합)
+
+// 키보드 입력 상태
+const keys = {};
+
+// 게임 초기화 (DOM 로드 후 자동 실행)
+function setupGame() {
+    console.log('게임 설정 시작...');
+    
+    try {
+        // 이벤트 리스너 설정
+        if (typeof setupEventListeners === 'function') {
+            setupEventListeners();
+        } else {
+            console.error('setupEventListeners 함수를 찾을 수 없습니다!');
+        }
+        
+        // 전체화면 기능 초기화
+        if (typeof initFullscreen === 'function') {
+            initFullscreen();
+        } else {
+            console.error('initFullscreen 함수를 찾을 수 없습니다!');
+        }
+        
+        // 게임 시작 화면 표시
+        if (typeof showStartScreen === 'function') {
+            showStartScreen();
+        } else {
+            console.error('showStartScreen 함수를 찾을 수 없습니다!');
+        }
+        
+        // 게임 시작 전 배경 음악 재생
+        if (window.audioSystem && window.audioSystem.playTitleMusic) {
+            console.log('🎵 게임 시작 전 배경 음악 재생 시도...');
+            window.audioSystem.playTitleMusic();
+        } else {
+            console.warn('오디오 시스템이 아직 초기화되지 않았습니다.');
+        }
+        
+        console.log('게임 설정 완료!');
+    } catch (error) {
+        console.error('setupGame 실행 중 오류 발생:', error);
+    }
+}
+
+// DOM 로드 완료 후 자동으로 setupGame 실행 (지연 실행으로 변경)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('game-core.js: DOM 로드 완료, setupGame 지연 실행...');
+        // 약간의 지연을 두어 다른 스크립트들이 로드될 시간을 줌
+        setTimeout(() => {
+            if (typeof setupGame === 'function') {
+                setupGame();
+            } else {
+                console.warn('setupGame 함수가 아직 정의되지 않았습니다. game.js에서 처리됩니다.');
+            }
+        }, 100);
+    });
+} else {
+    console.log('game-core.js: DOM 이미 로드됨, setupGame 지연 실행...');
+    setTimeout(() => {
+        if (typeof setupGame === 'function') {
+            setupGame();
+        } else {
+            console.warn('setupGame 함수가 아직 정의되지 않았습니다. game.js에서 처리됩니다.');
+        }
+    }, 100);
+}
+
+// 게임 시작 화면 표시
+function showStartScreen() {
+    const startScreen = document.getElementById('startScreen');
+    const characterSelectScreen = document.getElementById('characterSelectScreen');
+    
+    if (startScreen) {
+        startScreen.style.display = 'block';
+        console.log('게임 시작 화면 표시됨');
+    }
+    if (characterSelectScreen) {
+        characterSelectScreen.style.display = 'none';
+    }
+    
+    // 게임 캔버스 숨기기
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.style.display = 'none';
+    }
+}
+
+// 게임 시작 함수
+function startGame() {
+    console.log('게임 시작!');
+    
+    // 게임 시작 전 배경 음악 정지
+    if (window.audioSystem && window.audioSystem.stopTitleMusic) {
+        window.audioSystem.stopTitleMusic();
+    }
+    
+    // 캐릭터 선택 화면 숨기기
+    const characterSelectScreen = document.getElementById('characterSelectScreen');
+    if (characterSelectScreen) {
+        characterSelectScreen.style.display = 'none';
+    }
+    
+    // 게임 캔버스 표시
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.style.display = 'block';
+    }
+    
+    // 게임 상태 설정
+    gameRunning = true;
+    gamePaused = false;
+    
+    // 플레이어 초기화
+    initPlayer();
+    
+    // 스테이지 초기화
+    initStage();
+    
+    // 게임 루프 시작
+    gameLoop();
+    
+    console.log('게임 루프 시작됨');
+}
+
+// 게임 루프
+function gameLoop() {
+    if (!gameRunning || gamePaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
+    // 게임 로직 업데이트
+    updateGame();
+    
+    // 다음 프레임 요청
+    requestAnimationFrame(gameLoop);
+}
+
+// 게임 업데이트
+function updateGame() {
+    // 플레이어 업데이트
+    updatePlayer();
+    
+    // 적 업데이트
+    updateEnemies();
+    
+    // 코인 업데이트
+    updateCoins();
+    
+    // 파티클 업데이트
+    updateParticles();
+    
+    // 스테이지 진행도 업데이트
+    updateStageProgress();
+    
+    // 렌더링
+    renderGame();
+}
+
+// 플레이어 업데이트
+function updatePlayer() {
+    // 중력 적용
+    player.velocityY += GRAVITY;
+    
+    // 위치 업데이트
+    player.x += player.velocityX;
+    player.y += player.velocityY;
+    
+    // 지면 충돌 확인
+    checkGroundCollision();
+    
+    // 경계 확인
+    if (player.x < 0) player.x = 0;
+    if (player.x > STAGE_WIDTH - player.width) player.x = STAGE_WIDTH - player.width;
+    if (player.y > 900 - player.height) {
+        player.y = 900 - player.height;
+        player.velocityY = 0;
+        player.onGround = true;
+        player.jumpCount = 0;
+    }
+}
+
+// 지면 충돌 확인
+function checkGroundCollision() {
+    player.onGround = false;
+    
+    for (const platform of platforms) {
+        if (player.x < platform.x + platform.width &&
+            player.x + player.width > platform.x &&
+            player.y < platform.y + platform.height &&
+            player.y + player.height > platform.y) {
+            
+            if (player.velocityY > 0) {
+                player.y = platform.y - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+                player.jumpCount = 0;
+            }
+        }
+    }
+}
+
+// 적 업데이트
+function updateEnemies() {
+    for (const enemy of enemies) {
+        // 간단한 AI: 좌우 이동
+        if (enemy.x < 400 || enemy.x > 600) {
+            enemy.velocityX = enemy.velocityX || 2;
+            enemy.velocityX *= -1;
+        }
+        enemy.x += enemy.velocityX || 2;
+    }
+}
+
+// 코인 업데이트
+function updateCoins() {
+    for (const coin of coins) {
+        if (!coin.collected) {
+            // 플레이어와 코인 충돌 확인
+            if (player.x < coin.x + coin.width &&
+                player.x + player.width > coin.x &&
+                player.y < coin.y + coin.height &&
+                player.y + player.height > coin.y) {
+                
+                coin.collected = true;
+                score += 100;
+                console.log('코인 획득! 점수:', score);
+            }
+        }
+    }
+}
+
+// 파티클 업데이트
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i];
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life--;
+        
+        if (particle.life <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+}
+
+// 스테이지 진행도 업데이트
+function updateStageProgress() {
+    const totalCoins = coins.length;
+    const collectedCoins = coins.filter(c => c.collected).length;
+    const remainingEnemies = enemies.filter(e => e.health > 0).length;
+    
+    stageProgress = ((totalCoins - collectedCoins) / totalCoins) * 100;
+    
+    if (collectedCoins === totalCoins && remainingEnemies === 0) {
+        stageComplete = true;
+        console.log('스테이지 완료!');
+    }
+}
+
+// 게임 렌더링
+function renderGame() {
+    // 캔버스 클리어
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 배경 그리기
+    drawBackground();
+    
+    // 플랫폼 그리기
+    drawPlatforms();
+    
+    // 플레이어 그리기
+    drawPlayer();
+    
+    // 적 그리기
+    drawEnemies();
+    
+    // 코인 그리기
+    drawCoins();
+    
+    // 파티클 그리기
+    drawParticles();
+    
+    // UI 그리기
+    drawUI();
+}
+
+// 배경 그리기
+function drawBackground() {
+    // 하늘 그라데이션
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#87CEEB');
+    gradient.addColorStop(1, '#E0F6FF');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+// 플랫폼 그리기
+function drawPlatforms() {
+    ctx.fillStyle = '#8B4513';
+    for (const platform of platforms) {
+        ctx.fillRect(platform.x - cameraX, platform.y, platform.width, platform.height);
+    }
+}
+
+// 플레이어 그리기
+function drawPlayer() {
+    ctx.fillStyle = '#FF6B6B';
+    ctx.fillRect(player.x - cameraX, player.y, player.width, player.height);
+}
+
+// 적 그리기
+function drawEnemies() {
+    ctx.fillStyle = '#228B22';
+    for (const enemy of enemies) {
+        if (enemy.health > 0) {
+            ctx.fillRect(enemy.x - cameraX, enemy.y, enemy.width, enemy.height);
+        }
+    }
+}
+
+// 코인 그리기
+function drawCoins() {
+    ctx.fillStyle = '#FFD700';
+    for (const coin of coins) {
+        if (!coin.collected) {
+            ctx.fillRect(coin.x - cameraX, coin.y, coin.width, coin.height);
+        }
+    }
+}
+
+// 파티클 그리기
+function drawParticles() {
+    ctx.fillStyle = '#FF4500';
+    for (const particle of particles) {
+        ctx.fillRect(particle.x - cameraX, particle.y, 4, 4);
+    }
+}
+
+// UI 그리기
+function drawUI() {
+    // 점수
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '24px Arial';
+    ctx.fillText(`점수: ${score}`, 20, 40);
+    
+    // 생명
+    ctx.fillText(`생명: ${lives}`, 20, 70);
+    
+    // 스테이지
+    ctx.fillText(`스테이지: ${currentStage}`, 20, 100);
+    
+    // 진행도
+    ctx.fillText(`진행도: ${Math.round(stageProgress)}%`, 20, 130);
+}
+
+// 게임 재시작 함수
+function restartGame() {
+    console.log('게임 재시작!');
+    
+    // 게임 상태 초기화
+    gameRunning = false;
+    gamePaused = false;
+    score = 0;
+    lives = 5;
+    currentStage = 1;
+    currentPlanet = 1;
+    
+    // 게임 시작 화면으로 돌아가기
+    showStartScreen();
+    
+    // 게임 캔버스 숨기기
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.style.display = 'none';
+    }
+}
+
+// 일시정지 토글
+function togglePause() {
+    if (gameRunning) {
+        gamePaused = !gamePaused;
+        console.log(gamePaused ? '게임 일시정지' : '게임 재개');
+    }
+}
+
+// 플레이어 초기화
+function initPlayer() {
+    console.log('플레이어 초기화...');
+    
+    // 플레이어 기본 설정
+    player.x = 100;
+    player.y = 800;
+    player.velocityX = 0;
+    player.velocityY = 0;
+    player.health = 300;
+    player.maxHealth = 300;
+    player.attacking = false;
+    player.attackCooldown = 0;
+    player.invincible = false;
+    player.invincibleTime = 0;
+    player.onGround = false;
+    player.jumping = false;
+    player.jumpCount = 0;
+    player.direction = 1;
+    
+    // 선택된 캐릭터에 따른 능력치 설정
+    if (selectedCharacter && CHARACTER_STATS[selectedCharacter]) {
+        const stats = CHARACTER_STATS[selectedCharacter];
+        player.health = stats.health;
+        player.maxHealth = stats.health;
+        player.attackPower = stats.attackPower;
+        player.speed = stats.speed;
+        player.jumpPower = stats.jumpPower;
+        player.character = selectedCharacter;
+    }
+    
+    console.log('플레이어 초기화 완료:', player);
+}
+
+// 스테이지 초기화
+function initStage() {
+    console.log('스테이지 초기화...');
+    
+    // 스테이지 진행도 초기화
+    stageProgress = 0;
+    stageComplete = false;
+    
+    // 카메라 위치 초기화
+    cameraX = 0;
+    
+    // 게임 객체들 초기화
+    platforms = [];
+    enemies = [];
+    coins = [];
+    particles = [];
+    explosions = [];
+    
+    // 플랫폼 생성
+    createPlatforms();
+    
+    // 적 생성
+    createEnemies();
+    
+    // 코인 생성
+    createCoins();
+    
+    console.log('스테이지 초기화 완료');
+}
+
+// 플랫폼 생성
+function createPlatforms() {
+    // 기본 지면
+    platforms.push({
+        x: 0,
+        y: 900,
+        width: STAGE_WIDTH,
+        height: 100,
+        type: 'ground'
+    });
+    
+    // 중간 플랫폼들
+    platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform' });
+    platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform' });
+    platforms.push({ x: 900, y: 500, width: 200, height: 20, type: 'platform' });
+    platforms.push({ x: 1200, y: 400, width: 200, height: 20, type: 'platform' });
+    
+    console.log('플랫폼 생성 완료:', platforms.length);
+}
+
+// 적 생성
+function createEnemies() {
+    // 나무돌이들
+    enemies.push({ x: 400, y: 800, width: 40, height: 60, health: 50, type: 'wood' });
+    enemies.push({ x: 700, y: 700, width: 40, height: 60, health: 50, type: 'wood' });
+    enemies.push({ x: 1000, y: 600, width: 40, height: 60, health: 50, type: 'wood' });
+    
+    console.log('적 생성 완료:', enemies.length);
+}
+
+// 코인 생성
+function createCoins() {
+    // 코인들
+    for (let i = 0; i < 20; i++) {
+        coins.push({
+            x: 200 + i * 100,
+            y: 800,
+            width: 20,
+            height: 20,
+            collected: false
+        });
+    }
+    
+    console.log('코인 생성 완료:', coins.length);
+}
+
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    // 키보드 이벤트
+    document.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        
+        // 게임 컨트롤
+        if (e.code === 'Space' && gameRunning && !gamePaused) {
+            e.preventDefault();
+            jump();
+        }
+        if (e.code === 'KeyF' && gameRunning && !gamePaused) {
+            e.preventDefault();
+            attack();
+        }
+        if (e.code === 'KeyS' && gameRunning && !gamePaused) {
+            e.preventDefault();
+            dash();
+        }
+        if (e.code === 'KeyP' && gameRunning) {
+            e.preventDefault();
+            togglePause();
+        }
+        if (e.code === 'F11') {
+            e.preventDefault();
+            toggleFullscreen();
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+    });
+    
+    console.log('이벤트 리스너 설정 완료');
+}
+
+// 전체화면 기능 초기화
+function initFullscreen() {
+    const fullscreenToggle = document.getElementById('fullscreenToggle');
+    if (fullscreenToggle) {
+        fullscreenToggle.addEventListener('click', toggleFullscreen);
+    }
+    
+    // ESC 키로 전체화면 해제
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+}
+
+// 전체화면 토글
+function toggleFullscreen() {
+    if (!isFullscreen) {
+        enterFullscreen();
+    } else {
+        exitFullscreen();
+    }
+}
+
+// 전체화면 진입
+function enterFullscreen() {
+    const gameContainer = document.getElementById('gameContainer');
+    const canvas = document.getElementById('gameCanvas');
+    
+    if (gameContainer.requestFullscreen) {
+        gameContainer.requestFullscreen();
+    } else if (gameContainer.webkitRequestFullscreen) {
+        gameContainer.webkitRequestFullscreen();
+    } else if (gameContainer.mozRequestFullScreen) {
+        gameContainer.mozRequestFullScreen();
+    } else if (gameContainer.msRequestFullscreen) {
+        gameContainer.msRequestFullscreen();
+    }
+    
+    // 전체화면 모드 CSS 클래스 추가
+    document.body.classList.add('fullscreen');
+    isFullscreen = true;
+    
+    // 캔버스 크기 조정
+    resizeCanvas();
+    
+    console.log('전체화면 모드 진입');
+}
+
+// 전체화면 해제
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
+    
+    // 전체화면 모드 CSS 클래스 제거
+    document.body.classList.remove('fullscreen');
+    isFullscreen = false;
+    
+    // 캔버스 크기 조정
+    resizeCanvas();
+    
+    console.log('전체화면 모드 해제');
+}
+
+// 전체화면 상태 변경 처리
+function handleFullscreenChange() {
+    if (!document.fullscreenElement && 
+        !document.webkitFullscreenElement && 
+        !document.mozFullScreenElement && 
+        !document.msFullscreenElement) {
+        
+        // 전체화면이 해제된 경우
+        document.body.classList.remove('fullscreen');
+        isFullscreen = false;
+        resizeCanvas();
+        console.log('전체화면 모드 해제됨');
+    }
+}
+
+// 캔버스 크기 조정
+function resizeCanvas() {
+    const canvas = document.getElementById('gameCanvas');
+    const gameContainer = document.getElementById('gameContainer');
+    
+    if (isFullscreen) {
+        // 전체화면 모드: 화면 전체 크기
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+    } else {
+        // 일반 모드: 1080p 비율 유지하면서 화면에 맞춤
+        const maxWidth = window.innerWidth * 0.95;
+        const maxHeight = window.innerHeight * 0.95;
+        const aspectRatio = 1920 / 1080;
+        
+        let width = maxWidth;
+        let height = width / aspectRatio;
+        
+        if (height > maxHeight) {
+            height = maxHeight;
+            width = height * aspectRatio;
+        }
+        
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+    }
+}
+
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    // 키보드 이벤트
+    document.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        
+        // 게임 중이 아닐 때는 특정 키만 처리
+        if (!gameRunning) {
+            if (e.code === 'Enter' || e.code === 'Space') {
+                startGame();
+            }
+            return;
+        }
+        
+        // 게임 중 키 처리
+        switch(e.code) {
+            case 'Space':
+                e.preventDefault();
+                jump();
+                break;
+            case 'KeyP':
+                e.preventDefault();
+                togglePause();
+                break;
+            case 'F11':
+                e.preventDefault();
+                toggleFullscreen();
+                break;
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+        
+        // 대시 키를 떼면 대시 상태 해제
+        if (e.code === 'KeyS') {
+            isDashing = false;
+        }
+    });
+    
+    // 윈도우 리사이즈 이벤트
+    window.addEventListener('resize', resizeCanvas);
+    
+    // 버튼 이벤트
+    const startButton = document.getElementById('startButton');
+    const controlGuideButton = document.getElementById('controlGuideButton');
+    const restartButton = document.getElementById('restartButton');
+    
+    if (startButton) startButton.addEventListener('click', startGame);
+    if (controlGuideButton) controlGuideButton.addEventListener('click', showControlGuide);
+    if (restartButton) restartButton.addEventListener('click', restartGame);
+}
+
+// 게임 시작
+function startGame() {
+    console.log('게임 시작!');
+    
+    // UI 숨기기
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const characterSelectScreen = document.getElementById('characterSelectScreen');
+    
+    if (startScreen) startScreen.style.display = 'none';
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
+    if (characterSelectScreen) characterSelectScreen.style.display = 'none';
+    
+    // 게임 UI 표시
+    const gameUI = document.getElementById('gameUI');
+    if (gameUI) {
+        gameUI.style.display = 'block';
+        console.log('게임 UI 표시됨');
+    }
+    
+    // 게임 캔버스 표시 및 초기화
+    const gameCanvas = document.getElementById('gameCanvas');
+    if (gameCanvas) {
+        console.log('게임 캔버스 찾음:', gameCanvas);
+        
+        // 캔버스 스타일 설정
+        gameCanvas.style.display = 'block';
+        gameCanvas.style.position = 'relative';
+        gameCanvas.style.zIndex = '100';
+        
+        // 캔버스 크기 설정
+        gameCanvas.width = 1200;  // 고정 너비
+        gameCanvas.height = 800;  // 고정 높이
+        
+        // 캔버스 스타일 크기
+        gameCanvas.style.width = '1200px';
+        gameCanvas.style.height = '800px';
+        gameCanvas.style.maxWidth = '95vw';
+        gameCanvas.style.maxHeight = '95vh';
+        
+        // 캔버스 컨텍스트 확인 및 초기화
+        const ctx = gameCanvas.getContext('2d');
+        if (ctx) {
+            console.log('캔버스 컨텍스트 성공:', ctx);
+            
+            // 캔버스 초기화 (검정 배경)
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // 테스트 텍스트 그리기
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('게임 로딩 중...', gameCanvas.width / 2, gameCanvas.height / 2);
+            
+            console.log('캔버스 초기화 완료');
+        } else {
+            console.error('캔버스 컨텍스트 실패!');
+        }
+    } else {
+        console.error('게임 캔버스를 찾을 수 없습니다!');
+        return; // 캔버스가 없으면 게임 시작 중단
+    }
+    
+    // 게임 상태 초기화
+    gameRunning = true;
+    gamePaused = false;
+    score = 0;
+    currentStage = 1;
+    currentPlanet = 1;
+    bossStage = false;
+    bossDefeated = false;
+    gameTime = 0;
+    isNightMode = false;
+    nightModeTimer = 0;
+    lastTimeTransition = 0;
+    
+    // 난이도별 설정 적용
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    lives = difficulty.lives;
+    
+    // 플레이어 초기화
+    resetPlayer();
+    
+    // 카메라 초기화
+    cameraX = 0;
+    
+    // 스테이지 생성 (안전하게 호출)
+    if (typeof generateStage === 'function') {
+        if (typeof generateStage === 'function') {
+            generateStage();
+        } else {
+            console.warn('generateStage 함수가 정의되지 않았습니다. 기본 스테이지를 생성합니다.');
+            generateBasicStage();
+        }
+    
+    // UI 업데이트
+    updateUI();
+    
+    // 첫 번째 프레임 즉시 렌더링
+    console.log('첫 번째 프레임 렌더링 시작...');
+    
+    // 게임 시작 화면 표시
+    try {
+        const testCanvas = document.getElementById('gameCanvas');
+        const testCtx = testCanvas.getContext('2d');
+        
+        if (testCtx) {
+            // 기본 배경
+            testCtx.fillStyle = '#87CEEB';
+            testCtx.fillRect(0, 0, testCanvas.width, testCanvas.height);
+            
+            // 지면
+            testCtx.fillStyle = '#228B22';
+            testCtx.fillRect(0, testCanvas.height - 100, testCanvas.width, 100);
+            
+            // 게임 시작 메시지
+            testCtx.fillStyle = '#FFFFFF';
+            testCtx.font = 'bold 32px Arial';
+            testCtx.textAlign = 'center';
+            testCtx.fillText('게임 시작!', testCanvas.width / 2, testCanvas.height / 2 - 50);
+            testCtx.fillText(`캐릭터: ${selectedCharacter}`, testCanvas.width / 2, testCanvas.height / 2);
+            testCtx.fillText(`난이도: ${gameDifficulty}`, testCanvas.width / 2, testCanvas.height / 2 + 50);
+            
+            console.log('게임 시작 화면 표시 완료');
+        }
+    } catch (error) {
+        console.error('게임 시작 화면 렌더링 오류:', error);
+    }
+    
+    // 잠시 후 실제 게임 렌더링 시작
+    setTimeout(() => {
+        try {
+            console.log('실제 게임 렌더링 시작...');
+            renderGame();
+            console.log('첫 번째 프레임 렌더링 완료');
+        } catch (error) {
+            console.error('게임 렌더링 오류:', error);
+        }
+    }, 1000); // 1초 후 시작
+    
+    // 게임 루프 시작
+    console.log('게임 루프 시작...');
+    gameLoop();
+    
+    // 게임 배경음악 재생
+    if (audioSystem && audioSystem.playGameBGM) {
+        audioSystem.playGameBGM();
+    }
+    
+    // 효과음 안내 메시지
+    if (audioSystem && Object.keys(audioSystem.sounds).length === 0) {
+        console.log('💡 효과음이 없습니다. sfx/ 폴더에 .wav 파일을 추가하면 효과음이 재생됩니다!');
+        console.log('💡 배경음악이 없습니다. bgm/ 폴더에 .mp3 파일을 추가하면 배경음악이 재생됩니다!');
+    }
+    
+    console.log('게임 시작 완료! 캔버스:', gameCanvas);
+}
+
+// 스테이지 생성 함수들
+function generateStage() {
+    console.log('고급 스테이지 생성...');
+    
+    // 현재 행성에 따른 스테이지 생성
+    const planetTheme = PLANET_THEMES[currentPlanet] || PLANET_THEMES[1];
+    
+    // 플랫폼 생성
+    createPlanetPlatforms(planetTheme);
+    
+    // 적 생성 (generateEnemies 함수 사용)
+    if (typeof generateEnemies === 'function') {
+        generateEnemies();
+    } else {
+        createPlanetEnemies(planetTheme);
+    }
+    
+    // 코인 생성
+    createPlanetCoins(planetTheme);
+    
+    console.log('고급 스테이지 생성 완료');
+}
+
+function generateBasicStage() {
+    console.log('기본 스테이지 생성...');
+    
+    // 기본 플랫폼
+    platforms = [
+        { x: 0, y: 900, width: STAGE_WIDTH, height: 100, type: 'ground' },
+        { x: 300, y: 700, width: 200, height: 20, type: 'platform' },
+        { x: 600, y: 600, width: 200, height: 20, type: 'platform' },
+        { x: 900, y: 500, width: 200, height: 20, type: 'platform' },
+        { x: 1200, y: 400, width: 200, height: 20, type: 'platform' }
+    ];
+    
+    // 기본 적
+    enemies = [
+        { x: 400, y: 800, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 },
+        { x: 700, y: 700, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 },
+        { x: 1000, y: 600, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 }
+    ];
+    
+    // 기본 코인
+    coins = [];
+    for (let i = 0; i < 20; i++) {
+        coins.push({
+            x: 200 + i * 100,
+            y: 800,
+            width: 20,
+            height: 20,
+            collected: false
+        });
+    }
+    
+    console.log('기본 스테이지 생성 완료');
+}
+
+// 행성별 플랫폼 생성
+function createPlanetPlatforms(planetTheme) {
+    platforms = [];
+    
+    // 기본 지면
+    platforms.push({
+        x: 0,
+        y: 900,
+        width: STAGE_WIDTH,
+        height: 100,
+        type: 'ground',
+        color: planetTheme.ground
+    });
+    
+    // 행성별 특수 플랫폼
+    switch (currentPlanet) {
+        case 1: // 나무행성
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#228B22' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#228B22' });
+            break;
+        case 2: // 불꽃행성
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#8B0000' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#8B0000' });
+            break;
+        case 3: // 번개행성
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#4169E1' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#4169E1' });
+            break;
+        case 4: // 원소행성
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#8A2BE2' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#8A2BE2' });
+            break;
+        case 5: // 얼음행성
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#87CEEB' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#87CEEB' });
+            break;
+        default:
+            platforms.push({ x: 300, y: 700, width: 200, height: 20, type: 'platform', color: '#228B22' });
+            platforms.push({ x: 600, y: 600, width: 200, height: 20, type: 'platform', color: '#228B22' });
+    }
+}
+
+// 행성별 적 생성
+function createPlanetEnemies(planetTheme) {
+    enemies = [];
+    
+    // 기본 적들
+    enemies.push({ x: 400, y: 800, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 });
+    enemies.push({ x: 700, y: 700, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 });
+    enemies.push({ x: 1000, y: 600, width: 40, height: 60, health: 50, type: 'wood', velocityX: 2 });
+    
+    // 행성별 특수 적
+    if (currentPlanet === 5) { // 5의 배수 스테이지 - 보스
+        enemies.push({ x: 800, y: 600, width: 80, height: 120, health: 500, type: 'boss', velocityX: 1 });
+    }
+}
+
+// 행성별 코인 생성
+function createPlanetCoins(planetTheme) {
+    coins = [];
+    
+    for (let i = 0; i < 20; i++) {
+        coins.push({
+            x: 200 + i * 100,
+            y: 800,
+            width: 20,
+            height: 20,
+            collected: false,
+            color: planetTheme.coin || '#FFD700'
+        });
+    }
+}
+
+// UI 업데이트 함수
+function updateUI() {
+    console.log('UI 업데이트...');
+    
+    // 점수 표시
+    const scoreElement = document.getElementById('score');
+    if (scoreElement) {
+        scoreElement.textContent = score;
+    }
+    
+    // 생명 표시
+    const livesElement = document.getElementById('lives');
+    if (livesElement) {
+        livesElement.textContent = lives;
+    }
+    
+    // 스테이지 표시
+    const stageElement = document.getElementById('stage');
+    if (stageElement) {
+        stageElement.textContent = currentStage;
+    }
+    
+    console.log('UI 업데이트 완료');
+}
+
+// 게임 재시작
+function restartGame() {
+    console.log('게임 재시작!');
+    startGame();
+}
+
+// 게임 일시정지 토글
+function togglePause() {
+    if (!gameRunning) return;
+    
+    gamePaused = !gamePaused;
+    console.log(gamePaused ? '게임 일시정지' : '게임 재개');
+}
+
+// 점프 함수 (캐릭터별 능력치 적용)
+function jump() {
+    if (player.onGround && !player.jumping) {
+        // 첫 번째 점프 (캐릭터별 점프력 적용)
+        const jumpPower = player.jumpPower || JUMP_POWER;
+        player.velocityY = -jumpPower;
+        player.jumping = true;
+        player.onGround = false;
+        player.jumpCount = 1;
+        
+        // 점프 파티클 생성
+        createParticle(player.x + player.width/2, player.y + player.height, '#87CEEB');
+        
+        // 점프 효과음 재생
+        if (audioSystem && audioSystem.playJumpSound) {
+            audioSystem.playJumpSound();
+        }
+        
+        console.log(`${player.character} 첫 번째 점프! (점프력: ${jumpPower})`);
+    } else if (player.jumping && player.jumpCount < 3) {
+        // 두 번째, 세 번째 점프 (공중에서)
+        const baseJumpPower = player.jumpPower || JUMP_POWER;
+        const jumpPower = player.jumpCount === 2 ? baseJumpPower * 0.8 : baseJumpPower * 0.6;
+        player.velocityY = -jumpPower;
+        player.jumpCount++;
+        
+        // 점프 파티클 생성 (색상 구분)
+        let particleColor;
+        if (player.jumpCount === 2) {
+            particleColor = '#FFD700'; // 골드
+        } else {
+            particleColor = '#FF4500'; // 오렌지
+        }
+        createParticle(player.x + player.width/2, player.y + player.height, particleColor);
+        
+        console.log(`${player.character} ${player.jumpCount}번째 점프! (점프력: ${jumpPower})`);
+    }
+}
+
+// 플레이어 리셋
+function resetPlayer() {
+    player.x = 100;
+    player.y = 800;
+    player.velocityX = 0;
+    player.velocityY = 0;
+    
+    // 선택된 캐릭터의 능력치 적용
+    const character = CHARACTERS[selectedCharacter];
+    if (character) {
+        player.character = selectedCharacter;
+        player.maxHealth = character.stats.health;
+        player.health = character.stats.health;
+        player.attackPower = character.stats.attack;
+        player.speed = character.stats.speed;
+        player.jumpPower = character.stats.jumpPower;
+        
+        console.log(`캐릭터 ${selectedCharacter} 능력치 적용: 체력 ${character.stats.health}, 공격력 ${character.stats.attack}, 속도 ${character.stats.speed}`);
+    } else {
+        // 기본 능력치
+        player.character = '기본';
+        player.maxHealth = 300;
+        player.health = 300;
+        player.attackPower = 50;
+        player.speed = 6;
+        player.jumpPower = 18;
+    }
+    
+    // 난이도별 능력치 조정
+    const difficulty = DIFFICULTY_SETTINGS[gameDifficulty];
+    player.maxHealth = Math.round(player.maxHealth * difficulty.playerHealth);
+    player.health = player.maxHealth;
+    
+    player.attacking = false;
+    player.attackCooldown = 0;
+    player.invincible = false;
+    player.invincibleTime = 0;
+    player.projectiles = []; // 발사체 배열 초기화
+    player.jumpCount = 0; // 점프 횟수 초기화
+    isDashing = false; // 대시 상태 초기화
+    
+    // 대형 미사일 쿨다운 초기화
+    player.missileCooldown = 0;
+}
+
+// 공격 함수 (캐릭터별 공격력 적용)
+function attack() {
+    // 공격 쿨다운 체크
+    if (player.attackCooldown > 0) return;
+    
+    player.attacking = true;
+    player.attackCooldown = 8; // 공격 쿨다운 (0.13초)
+    
+    // 발사체 생성 위치 계산
+    let projectileX, projectileY;
+    if (player.direction > 0) {
+        // 오른쪽 방향
+        projectileX = player.x + player.width;
+        projectileY = player.y + player.height / 2;
+    } else {
+        // 왼쪽 방향
+        projectileX = player.x;
+        projectileY = player.y + player.height / 2;
+    }
+    
+    // 캐릭터별 발사체 타입 결정
+    let projectileType = 'normal';
+    let projectileDamage = player.attackPower || 50;
+    
+    // 특수 캐릭터별 공격 효과
+    if (player.character === '검사') {
+        projectileType = 'sword';
+        projectileDamage = Math.round(projectileDamage * 1.2); // 검사는 20% 추가 데미지
+    } else if (player.character === '궁수') {
+        projectileType = 'arrow';
+        projectileDamage = Math.round(projectileDamage * 1.1); // 궁수는 10% 추가 데미지
+    } else if (player.character === '망치전문가') {
+        projectileType = 'hammer';
+        projectileDamage = Math.round(projectileDamage * 1.3); // 망치전문가는 30% 추가 데미지
+    } else if (player.character === '폭탄전문가') {
+        projectileType = 'bomb';
+        projectileDamage = Math.round(projectileDamage * 1.4); // 폭탄전문가는 40% 추가 데미지
+    }
+    
+    // 발사체 생성
+    const projectile = new Projectile(projectileX, projectileY, player.direction, projectileType, projectileDamage);
+    player.projectiles.push(projectile);
+    
+    // 공격 파티클 생성 (캐릭터별 색상)
+    let particleColor = '#FFD700'; // 기본 골드
+    if (player.character === '검사') particleColor = '#FF4500'; // 빨강
+    else if (player.character === '궁수') particleColor = '#00FF00'; // 초록
+    else if (player.character === '망치전문가') particleColor = '#8B4513'; // 갈색
+    else if (player.character === '폭탄전문가') particleColor = '#FF0000'; // 빨강
+    
+    createParticle(projectileX, projectileY, particleColor);
+    
+    console.log(`${player.character} 공격! 데미지: ${projectileDamage}, 타입: ${projectileType}`);
+    
+    // 캐릭터별 공격 효과음 재생
+    if (audioSystem) {
+        switch (projectileType) {
+            case 'sword':
+                audioSystem.playSwordSound();
+                break;
+            case 'arrow':
+                audioSystem.playArrowSound();
+                break;
+            case 'hammer':
+                audioSystem.playHammerSound();
+                break;
+            case 'bomb':
+                audioSystem.playBombSound();
+                break;
+            default:
+                audioSystem.playSwordSound(); // 기본 검 효과음
+        }
+    }
+    
+    // 공격 애니메이션 효과
+    createAttackEffect(projectileX, projectileY);
+    
+    // 공격 상태를 즉시 해제하여 연속 공격 가능하게 함
+    setTimeout(() => {
+        player.attacking = false;
+    }, 100); // 0.1초 후 공격 상태 해제
+}
+
+// 대형 미사일 발사 함수
+function fireMissile() {
+    if (player.missileCooldown > 0) return;
+    
+    player.missileCooldown = 600; // 10초 (60fps * 10)
+    
+    // 미사일 생성 위치 계산
+    let missileX, missileY;
+    if (player.direction > 0) {
+        missileX = player.x + player.width;
+        missileY = player.y + player.height / 2;
+    } else {
+        missileX = player.x;
+        missileY = player.y + player.height / 2;
+    }
+    
+    // 대형 미사일 생성
+    const missile = new Missile(missileX, missileY, player.direction);
+    player.projectiles.push(missile);
+    
+    // 미사일 발사 파티클 생성
+    for (let i = 0; i < 15; i++) {
+        createParticle(missileX, missileY, '#FF4500', 
+            (Math.random() - 0.5) * 8, 
+            (Math.random() - 0.5) * 8);
+    }
+    
+    console.log('대형 미사일 발사!');
+}
+
+// 공격 이펙트 생성
+function createAttackEffect(x, y) {
+    // 공격 시작 파티클
+    for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const velocityX = Math.cos(angle) * 3;
+        const velocityY = Math.sin(angle) * 3;
+        
+        createParticle(x, y, '#FFD700', velocityX, velocityY);
+    }
+    
+    // 공격 방향 파티클
+    const direction = player.direction;
+    for (let i = 0; i < 5; i++) {
+        const offsetX = direction * (i * 8);
+        const offsetY = (Math.random() - 0.5) * 20;
+        
+        createParticle(
+            x + offsetX, 
+            y + offsetY, 
+            '#FF4500', 
+            direction * 6, 
+            (Math.random() - 0.5) * 4
+        );
+    }
+}
+
+// 파티클 생성 (향상된 버전)
+function createParticle(x, y, color, velocityX = 0, velocityY = 0) {
+    particles.push({
+        x: x,
+        y: y,
+        velocityX: velocityX + (Math.random() - 0.5) * 2,
+        velocityY: velocityY + (Math.random() - 0.5) * 2,
+        color: color,
+        life: 30 + Math.random() * 20,
+        size: 3 + Math.random() * 3
+    });
+}
+
+// 데미지 받기 (개선된 버전)
+function takeDamage(damage) {
+    // 무적 상태가 아닐 때만 데미지 받기
+    if (player.invincible) {
+        console.log('무적 상태로 데미지 무시!');
+        return;
+    }
+    
+    player.health -= damage;
+    if (player.health < 0) player.health = 0;
+    
+    // 무적 상태 설정 (1초간)
+    player.invincible = true;
+    player.invincibleTime = 60; // 60프레임 = 1초
+    
+    // 데미지 파티클 생성
+    createParticle(player.x + player.width/2, player.y, '#FF0000');
+    
+    // 화면 흔들림 효과 (렌더링에서 처리)
+    
+    console.log(`데미지 받음: ${damage}, 남은 생명: ${lives}`);
+    
+    // 체력이 0이 되면 생명 감소
+    if (player.health <= 0) {
+        loseLife();
+    }
+    
+    updateUI();
+}
+
+// 체력 회복 함수
+function healPlayer(amount) {
+    player.health = Math.min(player.health + amount, player.maxHealth);
+    
+    // 회복 파티클 생성
+    for (let i = 0; i < 10; i++) {
+        createParticle(player.x + player.width/2, player.y, '#00FF00');
+    }
+    
+    console.log(`체력 회복: +${amount}, 현재 체력: ${player.health}`);
+    updateUI();
+}
+
+// 생명 감소
+function loseLife() {
+    lives--;
+    console.log(`생명 감소! 남은 생명: ${lives}`);
+    
+    if (lives <= 0) {
+        gameOver();
+    } else {
+        // 플레이어 위치 재설정
+        resetPlayer();
+        
+        // 스테이지 재생성
+        generateStage();
+        
+        updateUI();
+    }
+}
+
+// 게임 오버
+function gameOver() {
+    console.log('게임 오버!');
+    gameRunning = false;
+    
+    // 게임 오버 효과음 재생
+    if (audioSystem && audioSystem.playGameOverSound) {
+        audioSystem.playGameOverSound();
+    }
+    
+    // 게임 배경음악 중지
+    if (audioSystem && audioSystem.stopBGM) {
+        audioSystem.stopBGM();
+    }
+    
+    // 최종 점수 설정
+    const finalScore = document.getElementById('finalScore');
+    const finalStage = document.getElementById('finalStage');
+    
+    if (finalScore) finalScore.textContent = score;
+    if (finalStage) finalStage.textContent = currentStage;
+    
+    // 게임 오버 화면 표시
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    if (gameOverScreen) gameOverScreen.style.display = 'block';
+}
+
+// 게임 재시작
+function restartGame() {
+    console.log('게임 재시작!');
+    
+    // 게임 오버 화면 숨기기
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    if (gameOverScreen) gameOverScreen.style.display = 'none';
+    
+    // 게임 상태 초기화
+    score = 0;
+    lives = 5;
+    currentStage = 1;
+    currentPlanet = 1;
+    gameTime = 0;
+    isNightMode = false;
+    nightModeTimer = 0;
+    lastTimeTransition = 0;
+    bossStage = false;
+    bossDefeated = false;
+    
+    // 게임 시작
+    startGame();
+}
+
+// 컨트롤 가이드 표시
+function showControlGuide() {
+    const guide = `
+🎮 **게임 컨트롤 가이드**
+
+**이동:**
+- A / ←: 왼쪽 이동
+- D / →: 오른쪽 이동
+- 스페이스바: 점프 (3단 점프 가능!)
+- S: 대시 (빠른 이동)
+
+**액션:**
+- F: 무기 발사 (골드 발사체, 연속 발사!)
+- E: 대형 미사일 (광역 데미지, 10초 쿨다운!)
+- P: 일시정지
+- F11: 전체화면 토글
+
+**전체화면:**
+- 우측 상단 ⛶ 버튼 클릭
+- 또는 F11 키 사용
+
+**게임 시스템:**
+- F키로 적을 연속 공격하세요! (0.13초마다!)
+- E키로 대형 미사일을 발사하세요! (광역 데미지!)
+- 발사체가 적에게 맞으면 폭발 효과와 함께 데미지!
+- 3단 점프로 더 높은 곳으로 이동 가능!
+- S키로 대시하여 빠르게 이동!
+- 적을 물리치고 코인을 모으세요!
+- 스테이지 진행도가 100%가 되면 다음 스테이지로!
+- 체력이 0이 되면 생명이 감소합니다
+- 무적 시간 동안은 추가 데미지를 받지 않습니다
+- 체력 회복 아이템을 먹어 체력을 회복하세요!
+
+**보스 시스템:**
+- 5스테이지마다 강력한 보스 등장!
+- 보스를 처치하면 다음 구간으로 진행!
+- 보스는 일반 적보다 훨씬 강력합니다!
+
+**적 AI (강화됨!):**
+- 플레이어가 가까우면 추적 모드로 전환 (범위 확장!)
+- 중간 거리에서는 경계 모드
+- 멀리 있으면 순찰 모드로 랜덤 이동
+- 적들도 점프를 합니다!
+- 원거리 공격 적, 폭발 적 등 다양한 적 등장!
+
+**게임 목표:**
+- 높은 점수를 기록하세요!
+- 최대한 많은 스테이지를 클리어하세요!
+- 연속 공격으로 적들을 물리치세요!
+- 보스를 처치하여 다음 구간으로 진행하세요!
+    `;
+    
+    alert(guide);
+}
+
+// 게임 루프
+function gameLoop() {
+    if (!gameRunning) return;
+    
+    if (!gamePaused) {
+        // 시간 시스템 업데이트
+        updateTimeSystem();
+        
+        // 업데이트
+        updatePlayer();
+        updateEnemies();
+        updateCoins();
+        updateProjectiles();
+        updateExplosions();
+        updateParticles();
+        updateStageProgress();
+        
+        // 렌더링
+        renderGame();
+    }
+    
+    // 다음 프레임 요청
+    requestAnimationFrame(gameLoop);
+}
+
+// 시간 시스템 업데이트
+function updateTimeSystem() {
+    gameTime += 1/60; // 60fps 기준으로 시간 증가
+    
+    // 30초마다 시간 전환 시도 (10% 확률)
+    if (gameTime - lastTimeTransition > 30 && Math.random() < 0.1) {
+        toggleTimeMode();
+        lastTimeTransition = gameTime;
+    }
+    
+    // 저녁 모드 지속 시간 관리
+    if (isNightMode) {
+        nightModeTimer += 1/60;
+        
+        // 20초 후 낮 모드로 복귀
+        if (nightModeTimer > 20) {
+            toggleTimeMode();
+        }
+    }
+}
+
+// 시간 모드 전환 (낮/저녁)
+function toggleTimeMode() {
+    isNightMode = !isNightMode;
+    
+    if (isNightMode) {
+        // 저녁 모드 시작
+        console.log('🌙 저녁 모드 시작! 적들이 강해집니다!');
+        
+        // 모든 적들을 강화
+        enemies.forEach(enemy => {
+            enemy.health = Math.round(enemy.health * 1.5); // 체력 50% 증가
+            enemy.attackPower = Math.round(enemy.attackPower * 1.3); // 공격력 30% 증가
+            enemy.velocityX = enemy.velocityX * 1.2; // 속도 20% 증가
+        });
+        
+        // 저녁 모드 효과음 재생
+        if (audioSystem && audioSystem.playMagicSound) {
+            audioSystem.playMagicSound();
+        }
+        
+        // 저녁 모드 파티클 효과
+        for (let i = 0; i < 50; i++) {
+            createParticle(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                '#4B0082', // 보라색
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+        }
+        
+    } else {
+        // 낮 모드로 복귀
+        console.log('☀️ 낮 모드로 복귀! 적들이 원래대로 돌아갑니다.');
+        
+        // 모든 적들을 원래대로 복원
+        enemies.forEach(enemy => {
+            enemy.health = Math.round(enemy.health / 1.5);
+            enemy.attackPower = Math.round(enemy.attackPower / 1.3);
+            enemy.velocityX = enemy.velocityX / 1.2;
+        });
+        
+        // 낮 모드 효과음 재생
+        if (audioSystem && audioSystem.playPowerUpSound) {
+            audioSystem.playPowerUpSound();
+        }
+        
+        // 낮 모드 파티클 효과
+        for (let i = 0; i < 30; i++) {
+            createParticle(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                '#FFD700', // 골드
+                (Math.random() - 0.5) * 3,
+                (Math.random() - 0.5) * 3
+            );
+        }
+    }
+    
+    nightModeTimer = 0;
+}
+
+// 게임 시작
+console.log('게임 핵심 로직 (보스 시스템 및 대형 미사일 구현 버전) 로드 완료!');
+
+// 전역 함수들을 명시적으로 노출
+window.setupGame = setupGame;
+window.startGame = startGame;
+window.restartGame = restartGame;
+window.togglePause = togglePause;
+window.initPlayer = initPlayer;
+window.initStage = initStage;
+window.gameLoop = gameLoop;
+window.setupEventListeners = setupEventListeners;
+window.initFullscreen = initFullscreen;
+window.showStartScreen = showStartScreen;
+
+// 함수 존재 확인 및 로깅
+const requiredFunctions = [
+    'setupGame', 'startGame', 'restartGame', 'togglePause',
+    'initPlayer', 'initStage', 'gameLoop', 'setupEventListeners',
+    'initFullscreen', 'showStartScreen'
+];
+
+console.log('=== 전역 함수 노출 상태 확인 ===');
+requiredFunctions.forEach(funcName => {
+    if (typeof window[funcName] === 'function') {
+        console.log(`✅ ${funcName}: 함수 로드됨`);
+    } else {
+        console.error(`❌ ${funcName}: 함수를 찾을 수 없음`);
+    }
+});
+
+console.log('=== 사용 가능한 전역 함수들 ===');
+const availableFunctions = Object.keys(window).filter(key => typeof window[key] === 'function');
+console.log(availableFunctions);
+
+// 게임 시스템 준비 완료 알림
+console.log('🎮 게임 시스템 준비 완료! 모든 함수가 전역에 노출되었습니다.');
