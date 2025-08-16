@@ -57,6 +57,7 @@ class AudioSystem {
   async loadGameSounds() {
     // 게임 효과음 로드
     const gameSounds = {
+      // 기본 게임 액션 효과음
       'jump': 'sfx/jump.wav',
       'coin': 'sfx/coin.wav',
       'enemy_hit': 'sfx/enemy_hit.wav',
@@ -65,18 +66,35 @@ class AudioSystem {
       'power_up': 'sfx/power_up.wav',
       'stage_clear': 'sfx/stage_clear.wav',
       'game_over': 'sfx/game_over.wav',
+      
+      // 메뉴 및 UI 효과음
       'menu_select': 'sfx/menu_select.wav',
       'menu_confirm': 'sfx/menu_confirm.wav',
+      
+      // 특수 효과음
       'portal': 'sfx/portal.wav',
       'magic': 'sfx/magic.wav',
+      'dash': 'sfx/dash.wav',
+      'landing': 'sfx/landing.wav',
+      
+      // 캐릭터별 공격 효과음
       'sword': 'sfx/sword.wav',
       'arrow': 'sfx/arrow.wav',
       'hammer': 'sfx/hammer.wav',
       'bomb': 'sfx/bomb.wav',
-      'dash': 'sfx/dash.wav',
-      'landing': 'sfx/landing.wav',
+      
+      // 보스 관련 효과음
       'boss_intro': 'sfx/boss_intro.wav',
-      'boss_defeat': 'sfx/boss_defeat.wav'
+      'boss_defeat': 'sfx/boss_defeat.wav',
+      
+      // 새로운 효과음들
+      'area_attack': 'sfx/area_attack.wav',
+      'upward_shot': 'sfx/upward_shot.wav',
+      'health_item': 'sfx/health_item.wav',
+      'weapon_upgrade': 'sfx/weapon_upgrade.wav',
+      'rolling_bomb': 'sfx/rolling_bomb.wav',
+      'bird_enemy': 'sfx/bird_enemy.wav',
+      'next_stage': 'sfx/next_stage.wav'
     };
 
     // CORS 오류 방지를 위한 안전 모드
@@ -388,6 +406,35 @@ class AudioSystem {
     this.safePlaySound('boss_defeat', 0.9);
   }
 
+  // 새로운 효과음 재생 함수들
+  playAreaAttackSound() {
+    this.safePlaySound('area_attack', 0.8);
+  }
+
+  playUpwardShotSound() {
+    this.safePlaySound('upward_shot', 0.7);
+  }
+
+  playHealthItemSound() {
+    this.safePlaySound('health_item', 0.6);
+  }
+
+  playWeaponUpgradeSound() {
+    this.safePlaySound('weapon_upgrade', 0.8);
+  }
+
+  playRollingBombSound() {
+    this.safePlaySound('rolling_bomb', 0.7);
+  }
+
+  playBirdEnemySound() {
+    this.safePlaySound('bird_enemy', 0.6);
+  }
+
+  playNextStageSound() {
+    this.safePlaySound('next_stage', 0.9);
+  }
+
   // 게임 상황별 배경음악 재생 (실제 파일에 맞게)
   playTitleBGM() {
     this.playBGM('title'); // PUFF AND MAGIC DRAGON
@@ -475,6 +522,63 @@ function activateAudioSystem() {
 window.playTitleBGM = () => {
   if (audioSystem) {
     audioSystem.playTitleBGM();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+// 전역 효과음 제어 함수들
+window.playAreaAttackSound = () => {
+  if (audioSystem) {
+    audioSystem.playAreaAttackSound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playUpwardShotSound = () => {
+  if (audioSystem) {
+    audioSystem.playUpwardShotSound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playHealthItemSound = () => {
+  if (audioSystem) {
+    audioSystem.playHealthItemSound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playWeaponUpgradeSound = () => {
+  if (audioSystem) {
+    audioSystem.playWeaponUpgradeSound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playRollingBombSound = () => {
+  if (audioSystem) {
+    audioSystem.playRollingBombSound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playBirdEnemySound = () => {
+  if (audioSystem) {
+    audioSystem.playBirdEnemySound();
+  } else {
+    console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
+  }
+};
+
+window.playNextStageSound = () => {
+  if (audioSystem) {
+    audioSystem.playNextStageSound();
   } else {
     console.log('⚠️ 오디오 시스템이 초기화되지 않았습니다.');
   }

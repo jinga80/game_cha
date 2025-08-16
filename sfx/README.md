@@ -23,6 +23,13 @@
 - `magic.wav` - 마법 효과음
 - `dash.wav` - 대시 효과음
 - `landing.wav` - 착지 효과음
+- `area_attack.wav` - 광역 공격 효과음
+- `upward_shot.wav` - 위쪽 발사 효과음
+- `health_item.wav` - 체력 회복 아이템 효과음
+- `weapon_upgrade.wav` - 무기 업그레이드 효과음
+- `rolling_bomb.wav` - 굴러오는 폭탄 효과음
+- `bird_enemy.wav` - 새 적 효과음
+- `next_stage.wav` - 다음 스테이지 이동 효과음
 
 ### ⚔️ 캐릭터별 공격 효과음
 - `sword.wav` - 검 공격 효과음
@@ -50,6 +57,15 @@ audioSystem.playSwordSound();
 audioSystem.playArrowSound();
 audioSystem.playHammerSound();
 audioSystem.playBombSound();
+
+// 새로운 효과음 재생
+audioSystem.playAreaAttackSound();      // 광역 공격
+audioSystem.playUpwardShotSound();     // 위쪽 발사
+audioSystem.playHealthItemSound();     // 체력 회복 아이템
+audioSystem.playWeaponUpgradeSound();  // 무기 업그레이드
+audioSystem.playRollingBombSound();    // 굴러오는 폭탄
+audioSystem.playBirdEnemySound();      // 새 적
+audioSystem.playNextStageSound();      // 다음 스테이지
 ```
 
 ## 🎨 효과음 제작 가이드
