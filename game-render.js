@@ -216,10 +216,20 @@ function renderEnemies() {
                 isBoss: enemy.isBoss
             });
             
-            // 보스인 경우 기본 y좌표 설정
+            // 보스인 경우 groundLevel 기반으로 y좌표 재계산
             if (enemy.isBoss) {
-                enemy.y = 500; // 기본 보스 y좌표
-                console.log('🔧 보스 y좌표를 기본값으로 수정:', enemy.y);
+                // canvas에서 groundLevel 계산
+                const canvas = document.getElementById('gameCanvas');
+                let groundLevel = 700; // 기본값
+                
+                if (canvas && canvas.height && isFinite(canvas.height)) {
+                    groundLevel = canvas.height - 100;
+                }
+                
+                // 보스 y좌표를 groundLevel 기반으로 설정 (지면에서 150~250px 위, 랜덤)
+                const randomOffset = Math.floor(Math.random() * 101) - 50; // -50 ~ +50
+                enemy.y = groundLevel - 200 + randomOffset;
+                console.log(`🔧 보스 y좌표를 groundLevel 기반으로 수정: ${groundLevel} - 200 + ${randomOffset} = ${enemy.y}`);
             } else {
                 return; // 일반 적은 건너뛰기
             }
@@ -393,8 +403,19 @@ function renderEnemies() {
                 // 보스 y좌표 추가 검증
                 if (!isFinite(enemy.y) || isNaN(enemy.y)) {
                     console.error('🚨 보스 y좌표가 여전히 유효하지 않습니다:', enemy.y);
-                    enemy.y = 500; // 강제로 기본값 설정
-                    console.log('🔧 보스 y좌표를 강제로 기본값으로 수정:', enemy.y);
+                    
+                    // canvas에서 groundLevel 계산하여 동적으로 설정
+                    const canvas = document.getElementById('gameCanvas');
+                    let groundLevel = 700; // 기본값
+                    
+                    if (canvas && canvas.height && isFinite(canvas.height)) {
+                        groundLevel = canvas.height - 100;
+                    }
+                    
+                    // 보스 y좌표를 groundLevel 기반으로 설정 (랜덤 요소 포함)
+                    const randomOffset = Math.floor(Math.random() * 101) - 50; // -50 ~ +50
+                    enemy.y = groundLevel - 200 + randomOffset;
+                    console.log(`🔧 보스 y좌표를 강제로 groundLevel 기반으로 수정: ${groundLevel} - 200 + ${randomOffset} = ${enemy.y}`);
                 }
                 
                 // 디아블로 스타일 보스 몸체 (어둡고 무서운 색상)
