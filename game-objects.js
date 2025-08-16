@@ -1197,8 +1197,20 @@ function generateStage() {
     // 현재 행성 테마 가져오기
     const planetTheme = PLANET_THEMES[currentPlanet];
     
-    // 지면 플랫폼 (행성 테마에 맞는 색상)
-    const groundLevel = canvas.height - 100;
+    // 지면 플랫폼 (행성 테마에 맞는 색상) - 안전한 groundLevel 계산
+    let groundLevel;
+    if (typeof canvas !== 'undefined' && canvas && canvas.height && isFinite(canvas.height)) {
+        groundLevel = canvas.height - 100;
+    } else {
+        groundLevel = 700; // 기본값 사용
+        console.warn(`⚠️ generateStage: canvas를 찾을 수 없어 기본 groundLevel 사용: ${groundLevel}`);
+    }
+    
+    // groundLevel 최종 검증
+    if (!isFinite(groundLevel) || isNaN(groundLevel)) {
+        groundLevel = 700; // 강제로 기본값 설정
+        console.error(`❌ generateStage: groundLevel이 유효하지 않아 강제로 기본값 설정: ${groundLevel}`);
+    }
     platforms.push({
         x: 0,
         y: groundLevel,
@@ -1252,8 +1264,8 @@ function generateStage() {
         });
     });
     
-    // 적 생성 (스테이지별로 다른 적 배치, 수량 대폭 증가)
-    const enemyPositions = generateEnemyPositions(currentStage);
+    // 적 생성 (스테이지별로 다른 적 배치, 수량 대폭 증가) - groundLevel 전달
+    const enemyPositions = generateEnemyPositions(currentStage, groundLevel);
     
     enemyPositions.forEach(pos => {
         const enemy = {
@@ -1409,24 +1421,28 @@ function generateStage() {
 }
 
 // 스테이지별 적 위치 및 능력치 생성 (행성 테마별로 다른 적) - 몹 5배 증가 + 새로운 적 타입
-function generateEnemyPositions(stageNumber = 1) {
-    // canvas가 정의되지 않은 경우를 대비한 안전한 groundLevel 계산
+function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
+    // groundLevel 계산 (매개변수로 받은 값 우선 사용, 없으면 계산)
     let groundLevel;
-    if (typeof canvas !== 'undefined' && canvas && canvas.height && isFinite(canvas.height)) {
+    if (stageGroundLevel && isFinite(stageGroundLevel) && !isNaN(stageGroundLevel)) {
+        groundLevel = stageGroundLevel;
+        console.log(`🌍 generateEnemyPositions: 전달받은 groundLevel 사용: ${groundLevel}`);
+    } else if (typeof canvas !== 'undefined' && canvas && canvas.height && isFinite(canvas.height)) {
         groundLevel = canvas.height - 100;
+        console.log(`🌍 generateEnemyPositions: canvas에서 계산한 groundLevel: ${groundLevel}`);
     } else {
         // 기본값 사용 (800 - 100 = 700)
         groundLevel = 700;
-        console.warn(`⚠️ canvas를 찾을 수 없거나 유효하지 않아 기본 groundLevel 사용: ${groundLevel}`);
+        console.warn(`⚠️ generateEnemyPositions: 기본 groundLevel 사용: ${groundLevel}`);
     }
     
     // groundLevel 최종 검증
     if (!isFinite(groundLevel) || isNaN(groundLevel)) {
         groundLevel = 700; // 강제로 기본값 설정
-        console.error(`❌ groundLevel이 유효하지 않아 강제로 기본값 설정: ${groundLevel}`);
+        console.error(`❌ generateEnemyPositions: groundLevel이 유효하지 않아 강제로 기본값 설정: ${groundLevel}`);
     }
     
-    console.log(`🌍 groundLevel 최종값: ${groundLevel}`);
+    console.log(`🌍 generateEnemyPositions 최종 groundLevel: ${groundLevel}`);
     const positions = [];
     const planetTheme = PLANET_THEMES[currentPlanet];
     
