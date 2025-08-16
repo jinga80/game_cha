@@ -694,9 +694,17 @@ function renderEnemyProjectiles() {
 
 // 보스 미사일 렌더링 함수
 function renderBossProjectiles() {
+    const ctx = window.gameCanvas.getContext('2d');
+    const canvas = window.gameCanvas;
+    
     // 보스 미사일이 없거나 스테이지가 완료된 경우 렌더링하지 않음
     if (!window.bossProjectiles || window.bossProjectiles.length === 0) {
         return;
+    }
+    
+    // 디버깅용 로그 (투사체 수가 많을 때만)
+    if (window.bossProjectiles.length > 10) {
+        console.log(`🎨 보스 투사체 렌더링 중: ${window.bossProjectiles.length}개`);
     }
     
     // 스테이지 완료 상태 확인
@@ -709,7 +717,22 @@ function renderBossProjectiles() {
         return;
     }
     
+    // cameraX 안전성 체크
+    if (typeof cameraX !== 'number' || !isFinite(cameraX)) {
+        console.warn('⚠️ renderBossProjectiles: cameraX 값 오류, 렌더링 건너뛰기');
+        return;
+    }
+    
     window.bossProjectiles.forEach(projectile => {
+        // 투사체 데이터 안전성 체크
+        if (!projectile || typeof projectile.x !== 'number' || !isFinite(projectile.x) ||
+            typeof projectile.y !== 'number' || !isFinite(projectile.y) ||
+            typeof projectile.width !== 'number' || !isFinite(projectile.width) ||
+            typeof projectile.height !== 'number' || !isFinite(projectile.height)) {
+            console.warn('⚠️ 유효하지 않은 보스 투사체 데이터:', projectile);
+            return; // 이 투사체는 건너뛰기
+        }
+        
         const x = projectile.x - cameraX;
         
         // 화면 밖의 미사일은 렌더링하지 않음

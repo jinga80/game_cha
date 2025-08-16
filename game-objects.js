@@ -451,6 +451,7 @@ function updateProjectiles() {
                             // 보스 미사일들 제거
                             if (window.bossProjectiles) {
                                 window.bossProjectiles.length = 0;
+                                console.log('🗑️ 보스 투사체 배열 정리 완료');
                             }
                             
                             // 적 발사체들도 제거 (보스 처치 시)
@@ -672,48 +673,48 @@ function updateEnemies() {
         // AI 상태 결정 (범위 확장!)
         if (distanceToPlayer < 350) { // 200 → 350으로 확장
             // 플레이어가 가까우면 추적 모드
-            enemy.state = 'chase';
-            enemy.targetX = player.x;
-            
+                        enemy.state = 'chase';
+                        enemy.targetX = player.x;
+                        
             // 플레이어 방향으로 이동
-            if (enemy.x < player.x) {
+                        if (enemy.x < player.x) {
                 enemy.velocityX = 3; // 2 → 3으로 증가
-                enemy.direction = 1;
-            } else {
+                            enemy.direction = 1;
+                        } else {
                 enemy.velocityX = -3; // -2 → -3으로 증가
-                enemy.direction = -1;
-            }
-            
+                            enemy.direction = -1;
+                        }
+                        
             // 적 점프 시스템 (플레이어가 높은 곳에 있을 때)
-            if (player.y < enemy.y - 50 && enemy.onGround && Math.random() < 0.02) {
+                        if (player.y < enemy.y - 50 && enemy.onGround && Math.random() < 0.02) {
                 enemy.velocityY = -15; // 적 점프력
-                enemy.onGround = false;
-                enemy.jumping = true;
+                            enemy.onGround = false;
+                            enemy.jumping = true;
                 console.log(`${enemy.type}가 점프!`);
-            }
+                        }
             
         } else if (distanceToPlayer < 600) { // 400 → 600으로 확장
             // 플레이어가 중간 거리에 있으면 경계 모드
-            enemy.state = 'alert';
+                        enemy.state = 'alert';
             
             // 플레이어 방향을 바라보기
-            enemy.direction = playerDirection;
-            
+                        enemy.direction = playerDirection;
+                        
             // 천천히 플레이어 방향으로 이동
-            if (enemy.x < player.x) {
+                        if (enemy.x < player.x) {
                 enemy.velocityX = 1; // 0.5 → 1로 증가
-            } else {
+                        } else {
                 enemy.velocityX = -1; // -0.5 → -1로 증가
-            }
+                        }
             
-        } else {
+                    } else {
             // 플레이어가 멀리 있으면 순찰 모드
-            enemy.state = 'patrol';
+                        enemy.state = 'patrol';
             
             // 랜덤한 방향으로 이동
             if (Math.random() < 0.02) { // 2% 확률로 방향 전환
-                enemy.direction *= -1;
-            }
+                            enemy.direction *= -1;
+                        }
             
             enemy.velocityX = enemy.direction * 1.2; // 0.8 → 1.2로 증가
         }
@@ -761,7 +762,7 @@ function updateEnemies() {
                         enemy.velocityY = 2;
                     } else if (enemy.y > enemy.originalY + 10) {
                         enemy.velocityY = -2;
-                    } else {
+            } else {
                         enemy.velocityY = 0;
                     }
                 }
@@ -776,26 +777,26 @@ function updateEnemies() {
             // 날아다니는 적은 플랫폼 충돌 무시
         } else {
             // 일반 적 중력 및 점프 처리
-            enemy.velocityY += 0.6; // 적 중력 (플레이어보다 약함)
-            enemy.y += enemy.velocityY;
-            
-            // 적 플랫폼 충돌 체크
-            enemy.onGround = false;
-            platforms.forEach(platform => {
-                if (enemy.x < platform.x + platform.width &&
-                    enemy.x + enemy.width > platform.x &&
-                    enemy.y < platform.y + platform.height &&
-                    enemy.y + enemy.height > platform.y) {
-                    
-                    if (enemy.velocityY > 0 && enemy.y < platform.y) {
-                        // 위에서 착지
-                        enemy.y = platform.y - enemy.height;
-                        enemy.velocityY = 0;
-                        enemy.onGround = true;
-                        enemy.jumping = false;
-                    }
+        enemy.velocityY += 0.6; // 적 중력 (플레이어보다 약함)
+        enemy.y += enemy.velocityY;
+        
+        // 적 플랫폼 충돌 체크
+        enemy.onGround = false;
+        platforms.forEach(platform => {
+            if (enemy.x < platform.x + platform.width &&
+                enemy.x + enemy.width > platform.x &&
+                enemy.y < platform.y + platform.height &&
+                enemy.y + enemy.height > platform.y) {
+                
+                if (enemy.velocityY > 0 && enemy.y < platform.y) {
+                    // 위에서 착지
+                    enemy.y = platform.y - enemy.height;
+                    enemy.velocityY = 0;
+                    enemy.onGround = true;
+                    enemy.jumping = false;
                 }
-            });
+            }
+        });
         }
         
         // 굴러오는 폭탄 몹 특별 처리 (플레이어 접근 시 3초 카운팅 후 자폭)
@@ -1081,7 +1082,7 @@ function enemyAttack(enemy) {
         damage = 20; // 포탑몬은 중간 공격
     } else {
         damage = 20; // 기본 데미지
-    }
+}
     
     // 난이도별 데미지 조정
     const difficulty = window.DIFFICULTY_SETTINGS ? window.DIFFICULTY_SETTINGS[gameDifficulty] : {
@@ -1394,18 +1395,18 @@ function generateStage() {
     
     enemyPositions.forEach(pos => {
         const enemy = {
-            x: pos.x,
-            y: pos.y,
-            width: pos.width || 40,
-            height: pos.height || 60,
-            type: pos.type,
-            health: pos.health,
+        x: pos.x,
+        y: pos.y,
+        width: pos.width || 40,
+        height: pos.height || 60,
+        type: pos.type,
+        health: pos.health,
             maxHealth: pos.health,
-            velocityX: pos.velocityX,
+        velocityX: pos.velocityX,
             velocityY: pos.velocityY || 0,
-            direction: pos.direction,
+        direction: pos.direction,
             attackCooldown: 0,
-            attackPower: pos.attackPower,
+        attackPower: pos.attackPower,
             state: 'patrol', // AI 상태: patrol, alert, chase
             targetX: pos.x, // 목표 위치
             onGround: true, // 점프를 위한 onGround 추가
@@ -1523,14 +1524,14 @@ function generateStage() {
     // 플랫폼 위 코인들 (더 많은 플랫폼에 배치)
     platformPositions.forEach((platform, index) => {
         if (index % 3 === 0 || index % 3 === 1) { // 2/3 플랫폼에 코인 배치
-            coins.push({
+        coins.push({
                 x: platform.x + platform.width / 2 - 10,
                 y: platform.y - 30,
-                width: 20,
-                height: 20,
-                collected: false
-            });
-        }
+            width: 20,
+            height: 20,
+            collected: false
+        });
+    }
     });
     
     // 공중 코인들 (HD2D 스타일에 맞게 조정)
@@ -1686,7 +1687,7 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
                 countdownStarted: false, // 카운팅 시작 시간
                 warningParticles: [] // 경고 파티클
             });
-        } else {
+            } else {
             console.warn(`⚠️ 유효하지 않은 폭탄 몹 좌표: (${validX}, ${validY}), groundLevel: ${groundLevel}`);
         }
     }
@@ -1701,9 +1702,9 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
             
             // 좌표값 검증
             if (isFinite(x) && isFinite(y) && !isNaN(x) && !isNaN(y) && x >= 0 && y >= 0) {
-                positions.push({
-                    x: x,
-                    y: y,
+            positions.push({
+                x: x,
+                y: y,
                     type: eliteEnemyType,
                     health: Math.floor(150 * healthMultiplier),
                     velocityX: -0.8,
@@ -1768,7 +1769,7 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
             // 스테이지 전체에 고르게 분산
             const x = minDistanceFromPlayer + (i * (stageWidth - minDistanceFromPlayer)) / additionalEnemies;
             const y = groundLevel - 60;
-            positions.push({
+        positions.push({
                 x: Math.floor(x),
                 y: y,
                 type: basicEnemyType,
@@ -1809,13 +1810,13 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
         y: bossY, // 검증된 y 좌표 사용
         width: 200, // 보스 크기 (일반 적의 5배)
         height: 200,
-        type: planetTheme.boss,
+            type: planetTheme.boss,
         health: Math.floor(500 * bossHealthMultiplier), // 보스 전용 체력 계수 적용
         maxHealth: Math.floor(500 * bossHealthMultiplier),
-        velocityX: 0,
-        direction: -1,
+            velocityX: 0,
+            direction: -1,
         attackPower: Math.floor(50 * bossAttackMultiplier), // 보스 전용 공격력 계수 적용
-        isBoss: true,
+            isBoss: true,
         bossStage: true,
         isGoldenBoss: true, // 디아블로 스타일 보스 표시
         isBossReserved: true // 보스 예약 플래그
@@ -1964,6 +1965,15 @@ function checkAndSpawnBoss() {
 
 // 보스 레이저 공격 생성 함수
 function createBossLaser(boss) {
+    // 보스 데이터 안전성 체크
+    if (!boss || typeof boss.x !== 'number' || !isFinite(boss.x) ||
+        typeof boss.y !== 'number' || !isFinite(boss.y) ||
+        typeof boss.width !== 'number' || !isFinite(boss.width) ||
+        typeof boss.height !== 'number' || !isFinite(boss.height)) {
+        console.warn('⚠️ 유효하지 않은 보스 데이터로 레이저 생성 실패:', boss);
+        return;
+    }
+    
     const laser = {
         x: boss.x + boss.width/2 - 2,
         y: boss.y + boss.height/2,
@@ -1995,14 +2005,30 @@ function createBossLaser(boss) {
     // 보스 미사일 배열에 추가
     if (!window.bossProjectiles) {
         window.bossProjectiles = [];
+        console.log('🆕 보스 투사체 배열 초기화');
     }
     window.bossProjectiles.push(laser);
     
-    console.log(`🔴 ${boss.type} 레이저 공격! 데미지: ${laser.damage}`);
+    console.log(`🔴 ${boss.type} 레이저 공격! 데미지: ${laser.damage}, 투사체 수: ${window.bossProjectiles.length}`);
 }
 
 // 보스 미사일 공격 생성 함수
 function createBossMissile(boss) {
+    // 보스 데이터 안전성 체크
+    if (!boss || typeof boss.x !== 'number' || !isFinite(boss.x) ||
+        typeof boss.y !== 'number' || !isFinite(boss.y) ||
+        typeof boss.width !== 'number' || !isFinite(boss.width) ||
+        typeof boss.height !== 'number' || !isFinite(boss.height)) {
+        console.warn('⚠️ 유효하지 않은 보스 데이터로 미사일 생성 실패:', boss);
+        return;
+    }
+    
+    // 플레이어 데이터 안전성 체크
+    if (!player || typeof player.x !== 'number' || !isFinite(player.x)) {
+        console.warn('⚠️ 유효하지 않은 플레이어 데이터로 미사일 생성 실패:', player);
+        return;
+    }
+    
     // 플레이어 방향으로 미사일 발사
     const playerDirection = player.x > boss.x ? 1 : -1;
     const missileSpeed = 6 + Math.random() * 2; // 6-8 속도
@@ -2039,10 +2065,11 @@ function createBossMissile(boss) {
     // 보스 미사일 배열에 추가
     if (!window.bossProjectiles) {
         window.bossProjectiles = [];
+        console.log('🆕 보스 투사체 배열 초기화');
     }
     window.bossProjectiles.push(missile);
     
-    console.log(`🚀 ${boss.type} 미사일 공격! 데미지: ${missile.damage}`);
+    console.log(`🚀 ${boss.type} 미사일 공격! 데미지: ${missile.damage}, 투사체 수: ${window.bossProjectiles.length}`);
 }
 
 // 적 원거리 발사체 생성 함수
@@ -2189,6 +2216,11 @@ function updateBossProjectiles() {
         return;
     }
     
+    // 디버깅용 로그 (투사체 수가 많을 때만)
+    if (window.bossProjectiles.length > 10) {
+        console.log(`🔍 보스 투사체 업데이트 중: ${window.bossProjectiles.length}개`);
+    }
+    
     // 스테이지 완료 상태 확인
     if (typeof stageComplete !== 'undefined' && stageComplete) {
         return;
@@ -2201,6 +2233,16 @@ function updateBossProjectiles() {
     
     for (let i = window.bossProjectiles.length - 1; i >= 0; i--) {
         const projectile = window.bossProjectiles[i];
+        
+        // 투사체 데이터 안전성 체크
+        if (!projectile || typeof projectile.x !== 'number' || !isFinite(projectile.x) ||
+            typeof projectile.y !== 'number' || !isFinite(projectile.y) ||
+            typeof projectile.velocityX !== 'number' || !isFinite(projectile.velocityX) ||
+            typeof projectile.velocityY !== 'number' || !isFinite(projectile.velocityY)) {
+            console.warn('⚠️ 유효하지 않은 보스 투사체 데이터, 제거:', projectile);
+            window.bossProjectiles.splice(i, 1);
+            continue;
+        }
         
         // 미사일 이동
         projectile.x += projectile.velocityX;
@@ -2301,5 +2343,5 @@ function forceSpawnBoss() {
     }
 }
 
-console.log('게임 객체 관리 시스템 (적 수 증가 및 대시 기능 구현 버전) 로드 완료!');
+console.log('게임 객체 관리 시스템 (적 수 증가 및 대시 기능 구현 버전) 로드 완료!'); 
 console.log('🧪 디버깅: forceSpawnBoss() 함수를 콘솔에서 호출하여 보스 등장을 테스트할 수 있습니다.'); 
