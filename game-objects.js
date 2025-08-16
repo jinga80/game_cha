@@ -856,7 +856,7 @@ function updateEnemies() {
             switch (enemy.bossState) {
                 case 'idle':
                     // 대기 상태 (플레이어가 가까이 오면 공격 모드로 전환)
-                    if (distanceToPlayer < 400) {
+                    if (distanceToPlayer < 300) { // 400 → 300으로 감소 (더 가까이 와야 공격)
                         enemy.bossState = 'attack';
                         enemy.bossTimer = 0;
                         console.log(`🏆 ${enemy.type} 공격 모드로 전환!`);
@@ -865,19 +865,19 @@ function updateEnemies() {
                     
                 case 'attack':
                     // 공격 모드
-                    if (enemy.bossTimer < 120) { // 2초간 공격
-                        // 플레이어 방향으로 이동
+                    if (enemy.bossTimer < 180) { // 3초간 공격 (2초 → 3초로 증가)
+                        // 플레이어 방향으로 이동 (속도 감소)
                         if (enemy.x < player.x) {
-                            enemy.velocityX = 2;
+                            enemy.velocityX = 0.8; // 2 → 0.8로 감소
                             enemy.direction = 1;
                         } else {
-                            enemy.velocityX = -2;
+                            enemy.velocityX = -0.8; // -2 → -0.8로 감소
                             enemy.direction = -1;
                         }
                         
-                        // 특수 공격 (점프 공격)
-                        if (enemy.bossTimer % 60 === 0 && enemy.onGround) {
-                            enemy.velocityY = -20;
+                        // 특수 공격 (점프 공격) - 빈도 감소
+                        if (enemy.bossTimer % 90 === 0 && enemy.onGround) { // 60 → 90으로 증가
+                            enemy.velocityY = -15; // -20 → -15로 감소
                             enemy.onGround = false;
                             console.log(`🏆 ${enemy.type} 점프 공격!`);
                         }
@@ -892,11 +892,11 @@ function updateEnemies() {
                     
                 case 'recover':
                     // 회복 모드 (체력 회복)
-                    if (enemy.bossTimer < 180) { // 3초간 회복
+                    if (enemy.bossTimer < 240) { // 4초간 회복 (3초 → 4초로 증가)
                         enemy.velocityX = 0;
-                        // 체력 회복 (매 프레임마다 1씩)
+                        // 체력 회복 (매 프레임마다 0.5씩) - 회복 속도 감소
                         if (enemy.health < enemy.maxHealth) {
-                            enemy.health = Math.min(enemy.health + 1, enemy.maxHealth);
+                            enemy.health = Math.min(enemy.health + 0.5, enemy.maxHealth);
                         }
                     } else {
                         // 회복 완료, 다시 대기 모드로
@@ -912,12 +912,12 @@ function updateEnemies() {
                 enemy.bossAttackCooldown--;
             }
             
-            // 보스 특수 능력 (지진 효과)
-            if (enemy.bossState === 'attack' && enemy.bossTimer % 120 === 0) {
+            // 보스 특수 능력 (지진 효과) - 빈도 감소
+            if (enemy.bossState === 'attack' && enemy.bossTimer % 180 === 0) { // 120 → 180으로 증가
                 // 지진 파티클 생성
-                for (let i = 0; i < 10; i++) {
+                for (let i = 0; i < 8; i++) { // 10 → 8로 감소
                     createParticle(
-                        enemy.x + enemy.width/2 + (Math.random() - 0.5) * 100,
+                        enemy.x + enemy.width/2 + (Math.random() - 0.5) * 80, // 100 → 80으로 감소
                         enemy.y + enemy.height,
                         '#8B4513'
                     );
