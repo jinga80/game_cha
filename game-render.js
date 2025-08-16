@@ -205,6 +205,26 @@ function renderEnemies() {
         
         const x = enemy.x - cameraX;
         
+        // y 좌표가 NaN인 경우 특별 처리 (보스 데이터 문제일 가능성)
+        if (enemy.y === undefined || enemy.y === null || isNaN(enemy.y)) {
+            console.error('🚨 적 y좌표가 NaN입니다:', {
+                enemy: enemy.type,
+                x: enemy.x,
+                y: enemy.y,
+                width: enemy.width,
+                height: enemy.height,
+                isBoss: enemy.isBoss
+            });
+            
+            // 보스인 경우 기본 y좌표 설정
+            if (enemy.isBoss) {
+                enemy.y = 500; // 기본 보스 y좌표
+                console.log('🔧 보스 y좌표를 기본값으로 수정:', enemy.y);
+            } else {
+                return; // 일반 적은 건너뛰기
+            }
+        }
+        
         // x 값이 유효한지 추가 체크
         if (!isFinite(x) || !isFinite(enemy.y) || !isFinite(enemy.width) || !isFinite(enemy.height)) {
             console.warn('⚠️ 유효하지 않은 적 위치/크기:', {x, y: enemy.y, width: enemy.width, height: enemy.height});
@@ -368,6 +388,13 @@ function renderEnemies() {
                 if (!isFinite(enemy.health) || !isFinite(enemy.maxHealth) || enemy.maxHealth <= 0) {
                     console.warn('⚠️ 보스 체력 데이터 오류:', {health: enemy.health, maxHealth: enemy.maxHealth});
                     return; // 이 보스는 건너뛰기
+                }
+                
+                // 보스 y좌표 추가 검증
+                if (!isFinite(enemy.y) || isNaN(enemy.y)) {
+                    console.error('🚨 보스 y좌표가 여전히 유효하지 않습니다:', enemy.y);
+                    enemy.y = 500; // 강제로 기본값 설정
+                    console.log('🔧 보스 y좌표를 강제로 기본값으로 수정:', enemy.y);
                 }
                 
                 // 디아블로 스타일 보스 몸체 (어둡고 무서운 색상)
