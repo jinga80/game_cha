@@ -1265,6 +1265,7 @@ function generateStage() {
     });
     
     // 적 생성 (스테이지별로 다른 적 배치, 수량 대폭 증가) - groundLevel 전달
+    console.log(`🎯 generateStage: generateEnemyPositions 호출 - currentStage: ${currentStage}, groundLevel: ${groundLevel}`);
     const enemyPositions = generateEnemyPositions(currentStage, groundLevel);
     
     enemyPositions.forEach(pos => {
@@ -1654,9 +1655,12 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
     
     // 보스는 모든 잡몹을 처치한 후에 등장하도록 예약만 해두기 (실제 생성은 나중에)
     // groundLevel이 유효하지 않은 경우를 대비한 안전한 계산
+    console.log(`🔍 보스 생성 시작 - groundLevel: ${groundLevel} (타입: ${typeof groundLevel})`);
+    
     let bossY;
     if (typeof groundLevel === 'number' && isFinite(groundLevel)) {
         bossY = groundLevel - 200;
+        console.log(`✅ 보스 y좌표 계산 성공: ${groundLevel} - 200 = ${bossY}`);
     } else {
         // 기본값 사용 (800 - 100 - 200 = 500)
         bossY = 500;
@@ -1692,8 +1696,16 @@ function generateEnemyPositions(stageNumber = 1, stageGroundLevel = null) {
     // 보스 데이터를 전역 변수에 저장 (나중에 모든 잡몹 처치 후 생성)
     window.currentStageBossData = bossData;
     
-    // 보스 데이터 저장 확인 (간소화)
+    // 보스 데이터 저장 확인 (상세)
     console.log(`🏆 스테이지 ${stageNumber} 보스 예약: ${planetTheme.boss} (${bossData.x}, ${bossData.y})`);
+    console.log(`🔍 보스 데이터 상세:`, {
+        x: bossData.x,
+        y: bossData.y,
+        width: bossData.width,
+        height: bossData.height,
+        type: bossData.type,
+        health: bossData.health
+    });
     
     // 난이도별 적 능력치 조정
     const difficulty = window.DIFFICULTY_SETTINGS ? window.DIFFICULTY_SETTINGS[gameDifficulty] : {
